@@ -110,7 +110,7 @@ export const symptoms = [
     fr: 'Bavure / arête au bord après surfaçage',
     area: 'Finish',
     causes: [
-      { text: 'Across overlap too small.', links: [['facing', 'cut', 'across-overlap']] },
+      { text: 'Across overlap too small.', links: [['facing', 'cut', 'overlaps']] },
       { text: 'Stepover close to 100% with a face mill.', links: [['facing', 'cut', 'max-stepover']] },
     ],
   },
@@ -158,7 +158,7 @@ export const symptoms = [
     fr: 'Filetage conique / serré au fond',
     area: 'Holes',
     causes: [
-      { text: 'Thread mill deflects — split into radial passes, shorter tool.', links: [['thread-mill', 'cut', 'radial-passes']] },
+      { text: 'Thread mill deflects — add radial passes (Multi Passes page), use a shorter tool or a spring pass.', links: [['thread-mill', 'cut', 'allowance']] },
       { text: 'Feed programmed at the edge but posted as centerline (or the reverse).', links: [['thread-mill', 'cut', 'tool-edge-feed']] },
     ],
   },
@@ -202,14 +202,68 @@ export const glossary = [
   { en: 'Fixture offset', fr: 'Décalage d’origine pièce', def: 'G54–G59 (and extended) work offsets.' },
 ];
 
-// Starting points for carbide endmills in a rigid setup. The tool maker's data always wins.
+// Starting points for coated solid-carbide endmills in a rigid setup.
+// vc = surface speed range (m/min), fz = chip load (mm/tooth) for a Ø10 tool at ≤50% stepover.
+// The tool maker's data always wins — these are for checking the order of magnitude.
+export const materialGroups = [
+  { id: 'N', name: 'N — Aluminium & non-ferrous' },
+  { id: 'P', name: 'P — Steel' },
+  { id: 'M', name: 'M — Stainless steel' },
+  { id: 'K', name: 'K — Cast iron' },
+  { id: 'S', name: 'S — Titanium & superalloys' },
+  { id: 'H', name: 'H — Hardened steel' },
+  { id: 'O', name: 'Plastics & composites' },
+];
+
 export const materials = [
-  { id: 'al', name: 'Aluminium (6061 / 7075)', fr: 'Aluminium', vc: [300, 600], fz: 0.06, note: 'Often limited by spindle RPM. Polished 2–3 flute tools, air blast or flood.' },
-  { id: 'steel', name: 'Steel (C45, 42CrMo4)', fr: 'Acier', vc: [120, 200], fz: 0.05, note: 'Coated (AlTiN) 4–5 flute tools.' },
-  { id: 'stainless', name: 'Stainless (304 / 316 / 17-4)', fr: 'Inox', vc: [70, 120], fz: 0.04, note: 'Keep the tool cutting — rubbing work-hardens the surface.' },
-  { id: 'ti', name: 'Titanium (Ti-6Al-4V)', fr: 'Titane', vc: [40, 70], fz: 0.04, note: 'Low Vc, small stepover, high-pressure coolant. Heat goes into the tool.' },
-  { id: 'inconel', name: 'Inconel 718', fr: 'Inconel', vc: [20, 40], fz: 0.03, note: 'Very low Vc; ceramic tools need special parameters.' },
-  { id: 'plastic', name: 'Plastics (POM, PEEK)', fr: 'Plastiques', vc: [200, 500], fz: 0.08, note: 'Sharp tools, avoid heat to stop melting.' },
+  { id: 'al', iso: 'N', name: 'Aluminium 6061 / 6082', vc: [300, 800], fz: 0.07, note: 'Usually limited by spindle RPM. Polished 2–3 flute tools, air blast or flood.' },
+  { id: 'al-7075', iso: 'N', name: 'Aluminium 7075 / 2024 (aerospace)', vc: [300, 700], fz: 0.06, note: 'Harder than 6061, chips well. Watch thin walls — they move after roughing.' },
+  { id: 'al-5083', iso: 'N', name: 'Aluminium 5083 / 5754 (plate)', vc: [250, 600], fz: 0.06, note: 'Softer and gummier than 6061: sharp polished tools, good chip evacuation.' },
+  { id: 'al-li', iso: 'N', name: 'Aluminium-lithium 2050 / 2198 (aerospace)', vc: [300, 600], fz: 0.06, note: 'Machines like 7075. Thin floors and walls move — leave stock and finish last.' },
+  { id: 'al-cast', iso: 'N', name: 'Cast aluminium, high silicon (AlSi, A356)', vc: [200, 400], fz: 0.05, note: 'Silicon is abrasive: use diamond-coated or DLC tools for long runs.' },
+  { id: 'mg', iso: 'N', name: 'Magnesium alloys', vc: [300, 600], fz: 0.06, note: 'Fire risk: no water-based coolant on fine chips, keep chips cleaned up.' },
+  { id: 'copper', iso: 'N', name: 'Copper (C110, Cu-ETP)', vc: [150, 300], fz: 0.04, note: 'Gummy: very sharp tools, high helix, generous coolant.' },
+  { id: 'brass', iso: 'N', name: 'Brass (C360, CuZn39Pb3)', vc: [200, 400], fz: 0.06, note: 'Free cutting. Use low or zero rake tools — positive rake can pull the tool in.' },
+  { id: 'bronze', iso: 'N', name: 'Bronze / aluminium bronze', vc: [100, 200], fz: 0.04, note: 'Aluminium bronze is tough and abrasive; treat it closer to stainless.' },
+
+  { id: 'steel-free', iso: 'P', name: 'Free-machining steel (11SMnPb30, 12L14)', vc: [180, 300], fz: 0.06, note: 'Easy chip breaking, good finish.' },
+  { id: 'steel-low', iso: 'P', name: 'Low carbon steel (S235, 1018, C15)', vc: [150, 250], fz: 0.05, note: 'Can be gummy — climb mill and keep the chip load up.' },
+  { id: 'steel', iso: 'P', name: 'Medium carbon steel (C45, 1045)', vc: [130, 200], fz: 0.05, note: 'AlTiN-coated 4–5 flute tools.' },
+  { id: 'steel-alloy', iso: 'P', name: 'Alloy steel pre-hardened (42CrMo4, 4140, ~30 HRC)', vc: [100, 170], fz: 0.045, note: 'Common for fixtures and shafts. Coated tools, flood or air.' },
+  { id: 'tool-steel', iso: 'P', name: 'Tool steel annealed (P20, H13, D2)', vc: [80, 140], fz: 0.04, note: 'D2 is very abrasive even annealed — lower end of the range.' },
+
+  { id: 'ss-303', iso: 'M', name: 'Stainless 303 (free machining)', vc: [100, 160], fz: 0.05, note: 'The easiest stainless to cut.' },
+  { id: 'stainless', iso: 'M', name: 'Stainless 304 / 316', vc: [70, 120], fz: 0.04, note: 'Work-hardens: never let the tool rub or dwell. Keep the chip load up.' },
+  { id: 'ss-410', iso: 'M', name: 'Martensitic stainless (410, 420)', vc: [90, 150], fz: 0.045, note: 'Machines more like alloy steel when annealed.' },
+  { id: 'ss-174', iso: 'M', name: 'PH stainless (17-4PH, 15-5PH)', vc: [60, 110], fz: 0.035, note: 'Common in aerospace. Harder in H900/H1025 conditions — go to the low end.' },
+  { id: 'ss-duplex', iso: 'M', name: 'Duplex stainless (2205)', vc: [50, 90], fz: 0.035, note: 'Tougher than 316. Rigid setup, sharp tools.' },
+
+  { id: 'ci-grey', iso: 'K', name: 'Grey cast iron (GG25, EN-GJL-250)', vc: [120, 220], fz: 0.06, note: 'Short chips, abrasive dust. Often machined dry.' },
+  { id: 'ci-ductile', iso: 'K', name: 'Ductile cast iron (GGG50, EN-GJS-500)', vc: [100, 180], fz: 0.05, note: 'Tougher than grey iron, longer chips.' },
+
+  { id: 'invar', iso: 'S', name: 'Invar 36 / Kovar', vc: [40, 80], fz: 0.035, note: 'Nickel-iron: gummy and work-hardens. Sharp tools, keep cutting, no dwell.' },
+  { id: 'monel', iso: 'S', name: 'Monel 400 / K-500', vc: [30, 60], fz: 0.035, note: 'Tough nickel-copper alloy. Treat like a soft superalloy.' },
+  { id: 'ti-cp', iso: 'S', name: 'Titanium CP grade 2', vc: [60, 100], fz: 0.045, note: 'Gummy. Sharp tools and lots of coolant.' },
+  { id: 'ti', iso: 'S', name: 'Titanium Ti-6Al-4V (grade 5)', vc: [40, 70], fz: 0.04, note: 'Low Vc, small stepover, high-pressure coolant. Heat goes into the tool.' },
+  { id: 'ti-beta', iso: 'S', name: 'Beta titanium (Ti-5553, Ti-10-2-3)', vc: [30, 50], fz: 0.035, note: 'Harder than Ti-6Al-4V: lower speed, dynamic toolpaths.' },
+  { id: 'inconel', iso: 'S', name: 'Inconel 718', vc: [20, 40], fz: 0.03, note: 'Very low Vc with carbide; never let the tool rub — it work-hardens.' },
+  { id: 'inconel-625', iso: 'S', name: 'Inconel 625 / Hastelloy', vc: [20, 35], fz: 0.03, note: 'Gummy and tough. Small stepover, constant engagement.' },
+  { id: 'waspaloy', iso: 'S', name: 'Waspaloy / René alloys', vc: [15, 30], fz: 0.025, note: 'Among the hardest superalloys to cut.' },
+  { id: 'cocr', iso: 'S', name: 'Cobalt-chrome (CoCrMo)', vc: [20, 40], fz: 0.03, note: 'Medical and aerospace. Abrasive and tough.' },
+
+  { id: 'tungsten', iso: 'S', name: 'Tungsten heavy alloy (Densimet)', vc: [60, 120], fz: 0.04, note: 'Abrasive and heavy. Rigid setup, fine-grain carbide.' },
+  { id: 'hard-45', iso: 'H', name: 'Hardened steel 45–50 HRC', vc: [70, 120], fz: 0.03, note: 'Hard-milling grade tools, light radial cuts.' },
+  { id: 'hard-55', iso: 'H', name: 'Hardened steel 50–55 HRC', vc: [50, 90], fz: 0.025, note: 'Small stepover, air blast rather than flood to avoid thermal shock.' },
+  { id: 'hard-62', iso: 'H', name: 'Hardened steel 55–62 HRC', vc: [30, 60], fz: 0.02, note: 'Very light cuts; check the tool maker\u2019s hard-milling data.' },
+
+  { id: 'plastic', iso: 'O', name: 'Acetal (POM, Delrin)', vc: [200, 500], fz: 0.1, note: 'Sharp single or 2-flute tools. Air blast to clear chips.' },
+  { id: 'pc', iso: 'O', name: 'Polycarbonate / Acrylic (PMMA)', vc: [200, 450], fz: 0.08, note: 'Single-flute O-flute tools for a clear edge; air, no oil-based coolant on acrylic.' },
+  { id: 'ptfe', iso: 'O', name: 'PTFE (Teflon)', vc: [200, 500], fz: 0.1, note: 'Very soft and springy — light finish pass, sharp tools, watch for burrs.' },
+  { id: 'peek', iso: 'O', name: 'PEEK', vc: [150, 300], fz: 0.08, note: 'Keep heat low; it is expensive scrap.' },
+  { id: 'nylon', iso: 'O', name: 'Nylon / UHMW-PE', vc: [200, 500], fz: 0.1, note: 'Soft and stringy. Sharp tools, big chip load, avoid melting.' },
+  { id: 'cfrp', iso: 'O', name: 'Carbon fibre (CFRP)', vc: [100, 300], fz: 0.04, note: 'Diamond-coated compression tools, dust extraction. Delamination at the edges if dull.' },
+  { id: 'g10', iso: 'O', name: 'G10 / FR4 (glass epoxy)', vc: [100, 250], fz: 0.05, note: 'Very abrasive, harmful dust — extraction required.' },
+  { id: 'graphite', iso: 'O', name: 'Graphite (EDM electrodes)', vc: [200, 600], fz: 0.05, note: 'Diamond-coated tools, dry with extraction.' },
 ];
 
 // G and M codes for Fanuc-style controls (Haas follows these for most codes).

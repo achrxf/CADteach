@@ -1,7 +1,7 @@
 import { html, raw, store, fmt, esc } from '../util.js';
 import { t } from '../i18n.js';
 import { ui } from '../icons.js';
-import { materials, gcodes, words } from '../data/reference.js';
+import { materials, materialGroups, gcodes, words } from '../data/reference.js';
 
 export function render(r) {
   const which = r.parts[1];
@@ -20,10 +20,16 @@ export function render(r) {
   };
 }
 
+// Chip load grows with tool diameter; the table gives fz for Ø10.
+const suggestedFz = (m, dMm) => m.fz * Math.pow(Math.min(Math.max((dMm || 10) / 10, 0.2), 2.5), 0.8);
+
 // ---------------------------------------------------------------------------
 function feeds() {
   const s = store.get('feeds', { unit: 'mm', mat: 'al', d: 10, z: 3, vc: 450, fz: 0.06, ae: 10, ap: 20, max: 12000 });
-  const matOpts = materials.map((m) => html`<option value="${m.id}" ${m.id === s.mat ? raw('selected') : ''}>${m.name}</option>`);
+  if (!materials.some((m) => m.id === s.mat)) s.mat = 'al';
+  const matOpts = materialGroups.map(
+    (g) => html`<optgroup label="${g.name}">${materials.filter((m) => m.iso === g.id).map((m) => html`<option value="${m.id}" ${m.id === s.mat ? raw('selected') : ''}>${m.name}</option>`)}</optgroup>`,
+  );
   return {
     title: t('feeds'),
     html: html`
@@ -35,7 +41,9 @@ function feeds() {
             <div class="field wide"><label>Units</label>
               <div class="seg" role="group" aria-label="Units"><button type="button" data-unit="mm" aria-pressed="${s.unit === 'mm'}">Metric (mm, m/min)</button><button type="button" data-unit="in" aria-pressed="${s.unit === 'in'}">Inch (in, SFM)</button></div>
             </div>
-            <div class="field wide"><label for="f-mat">Material</label><select class="select" id="f-mat" name="mat">${matOpts}</select></div>
+            <div class="field wide"><label for="f-mat-q">Material <span class="muted">(${materials.length} in the list)</span></label>
+              <input class="input" id="f-mat-q" type="search" placeholder="Filter, e.g. 7075, inconel, 17-4, POM" autocomplete="off" style="margin-bottom:6px">
+              <select class="select" id="f-mat" name="mat">${matOpts}</select></div>
             <div class="field"><label for="f-d">Tool Ø <span data-u="len"></span></label><input class="input" id="f-d" name="d" type="number" step="any" min="0" inputmode="decimal"></div>
             <div class="field"><label for="f-z">Flutes</label><input class="input" id="f-z" name="z" type="number" step="1" min="1" inputmode="numeric"></div>
             <div class="field"><label for="f-vc">Surface speed <span data-u="vc"></span></label><input class="input" id="f-vc" name="vc" type="number" step="any" min="0" inputmode="decimal"></div>
@@ -88,10 +96,27 @@ function feeds() {
         if (capped) notes.push(`<b>Spindle limited:</b> the material allows ${fmt(metric ? (vc * 1000) / (Math.PI * D) : (vc * 12) / (Math.PI * D), 0)} RPM, the machine stops at ${fmt(max, 0)}. Real surface speed is ${fmt(vcReal, 0)} ${metric ? 'm/min' : 'SFM'}.`);
         if (factor > 1.01) notes.push(`<b>Chip thinning:</b> at ${fmt(r * 100, 0)}% stepover the real chip is ${fmt(1 / factor, 2)}× fz, so the feed is raised by ×${fmt(factor, 2)} to keep a ${fmt(fz, metric ? 3 : 4)} ${lu} chip. Check the tool maker’s max fz before running it.`);
         if (r >= 0.5) notes.push('Stepover is 50% or more: no chip thinning correction. For deep cuts at this width, depth should be modest — or switch to a dynamic toolpath.');
-        if (mat) notes.push(`${esc(mat.name)}: ${esc(mat.note)}`);
+        if (mat) {
+          const fzD = suggestedFz(mat, metric ? D : D * 25.4);
+          const vcTxt = metric ? `${mat.vc[0]}–${mat.vc[1]} m/min` : `${Math.round(mat.vc[0] * 3.2808)}–${Math.round(mat.vc[1] * 3.2808)} SFM`;
+          const fzTxt = metric ? `${fmt(fzD, 3)} mm` : `${fmt(fzD / 25.4, 4)} in`;
+          notes.push(`<b>${esc(mat.name)}:</b> suggested Vc ${vcTxt}, fz about ${fzTxt} for this diameter. ${esc(mat.note)}`);
+        }
         root.querySelector('#feeds-notes').innerHTML = notes.map((n) => `<p>${n}</p>`).join('');
         store.set('feeds', s);
       };
+      const allOpts = form.elements.mat.innerHTML;
+      root.querySelector('#f-mat-q').addEventListener('input', (e) => {
+        const q = e.target.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const sel = form.elements.mat;
+        sel.innerHTML = allOpts;
+        if (q) {
+          sel.querySelectorAll('option').forEach((o) => { if (!o.textContent.toLowerCase().includes(q) && !o.value.includes(q)) o.remove(); });
+          sel.querySelectorAll('optgroup').forEach((g) => { if (!g.children.length) g.remove(); });
+        }
+        if (sel.options.length && ![...sel.options].some((o) => o.value === s.mat)) { sel.value = sel.options[0].value; sel.dispatchEvent(new Event('input', { bubbles: true })); }
+        else sel.value = s.mat;
+      });
       form.addEventListener('input', (e) => {
         const n = e.target.name;
         if (!n) return;
@@ -99,8 +124,9 @@ function feeds() {
         if (n === 'mat') {
           const m = materials.find((x) => x.id === s.mat);
           const mid = (m.vc[0] + m.vc[1]) / 2;
-          if (s.unit === 'mm') { s.vc = Math.round(mid); s.fz = m.fz; }
-          else { s.vc = Math.round(mid * 3.2808); s.fz = +(m.fz / 25.4).toFixed(4); }
+          const fzD = suggestedFz(m, s.unit === 'mm' ? +s.d : +s.d * 25.4);
+          if (s.unit === 'mm') { s.vc = Math.round(mid); s.fz = +fzD.toFixed(3); }
+          else { s.vc = Math.round(mid * 3.2808); s.fz = +(fzD / 25.4).toFixed(4); }
           fill();
         }
         calc();

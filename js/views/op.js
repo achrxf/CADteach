@@ -31,7 +31,7 @@ export function render(r) {
 
   const shownViz = new Set();
   const shotImg = (name, alt, cls = 'shot') =>
-    html`<button type="button" class="${cls}" data-zoom="img/mc2025/${name}.jpg" aria-label="Enlarge screenshot: ${alt}"><img src="img/mc2025/${name}.jpg" alt="${alt}" loading="lazy"></button>`;
+    html`<button type="button" class="${cls}" data-zoom="img/mc2025/${name}.png" aria-label="Enlarge screenshot: ${alt}"><img src="img/mc2025/${name}.png" alt="${alt}" loading="lazy"></button>`;
 
   const param = (p) => {
     const k = keyOf(op.id, page.id, p.id);

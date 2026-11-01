@@ -450,6 +450,7 @@ export const arcFilter = {
   fr: 'Filtre arc / Tolérance',
   intro: 'How closely the path follows the geometry, and how small moves are joined into arcs.',
   viz: 'tolerance',
+  shot: 'arc-filter',
   params: [
     {
       id: 'total-tolerance',
