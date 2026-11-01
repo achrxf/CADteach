@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CADteach — Mastercam explained</title>
+  <meta name="description" content="Every Mastercam 2025 2D mill parameter explained: what it does, when to change it, typical values and common mistakes, with interactive visuals.">
+  <meta name="theme-color" content="#e4e9ed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#151a1f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/app.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+  </script>
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try { var th = JSON.parse(localStorage.getItem('cadteach:theme')); if (th && th !== 'auto') document.documentElement.dataset.theme = th; } catch (e) {}
+  </script>
+</head>
+<body>
+  <noscript><p style="padding:24px">CADteach needs JavaScript to run.</p></noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
