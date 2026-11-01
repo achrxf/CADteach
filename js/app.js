@@ -9,6 +9,7 @@ import * as fix from './views/fix.js';
 import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
 import * as quiz from './views/quiz.js';
+import * as practice from './views/practice.js';
 
 export const APP_VERSION = '1.3.0';
 
@@ -31,7 +32,7 @@ function parse() {
 }
 
 const routes = {
-  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz,
+  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz, practice,
 };
 
 let cleanup = () => {};
@@ -146,6 +147,7 @@ function renderNav(r) {
       <a href="#/fix" ${cur(top === 'fix')}>${raw(ui.fix)}${t('fix')}</a>
       <a href="#/tools/feeds" ${cur(top === 'tools' && opId === 'feeds')}>${raw(ui.calc)}${t('feeds')}</a>
       <a href="#/tools/gcode" ${cur(top === 'tools' && opId === 'gcode')}>${raw(ui.gcode)}${t('gcode')}</a>
+      <a href="#/practice" ${cur(top === 'practice')}>${raw(ui.part)}Practice parts</a>
       <a href="#/quiz" ${cur(top === 'quiz')}>${raw(ui.check)}Test yourself</a>
       <a href="#/glossary" ${cur(top === 'glossary')}>${raw(ui.book)}${t('glossary')}</a>
       <a href="#/saved" ${cur(top === 'saved')}>${raw(ui.saved)}${t('saved')}</a>
@@ -161,7 +163,7 @@ function renderNav(r) {
   nav.querySelector('[aria-current="page"]:not(.nav-section:first-child a)')?.scrollIntoView({ block: 'nearest' });
   document.querySelectorAll('.tabbar [data-tab]').forEach((a) => {
     const tab = a.dataset.tab;
-    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' : top === tab;
+    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' || top === 'practice' : top === tab;
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }
