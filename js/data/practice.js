@@ -15,6 +15,7 @@ export const machines = {
 
 export const fixtures = {
   vise: (grip) => ({ type: 'vise', grip, name: `150 mm machinist vise on parallels, ${grip} mm of stock in the jaws` }),
+  clamps: (reach = 12) => ({ type: 'clamps', reach, name: `Four toe clamps on the stock corners (${reach} mm onto the stock), on a sub-plate with a spoilboard` }),
   plate: () => ({ type: 'plate', name: 'Vacuum table with a sacrificial spoilboard, so tools can break through' }),
 };
 
@@ -312,7 +313,186 @@ export const parts = [
     ],
     checks: ['The bore break-through is between the parallels, not over one', 'Dowels and bore are machined in the same setup (positional tolerance)', 'Target: under 22 minutes; count your tool changes'],
   },
+  // ---------------------------------------------------------------- harder jobs (v1.5)
+  {
+    id: 'gearbox-side-plate', name: 'Gearbox side plate', level: 'advanced', ops: ['contour', 'helix-bore', 'circle-mill', 'drill', 'thread-mill', 'dynamic-mill', 'pocket', 'slot-mill'], material: 'Aluminium 6082-T6',
+    stock: { x: 200, y: 150, z: 20 }, H: 20, base: { rrect: [0, 0, 200, 150, 0] }, fixture: fixtures.clamps(12), machine: 'alu',
+    brief: { story: 'A side plate for a small gearbox. The blank arrives ground to 20 mm and is clamped on its corners, so the clamps are in the way of anything near the edge. The bearing bore and its dowels set the gear mesh: they must be right.', qty: 30, cycle: 24, tol: ['Bearing bore Ø47 H7 (+0.025 / 0)', 'Shoulder Ø62 × 4 +0.05', 'Dowels Ø8 H7, position ±0.02 to the bore', 'Profile ±0.05'], ra: 'Ra 0.8 in the bore, Ra 1.6 elsewhere' },
+    tools: [['T1', T.em12], ['T2', T.hem10], ['T3', T.em8], ['T4', T.spot10], ['T5', 'Ø5 drill (M6 tap drill)'], ['T6', 'Ø7.8 drill'], ['T7', 'Ø8 H7 reamer'], ['T8', 'Ø4.5 thread mill, M6 × 1']],
+    features: [
+      { id: 'A', kind: 'outside', name: 'Angled outside profile', geo: { poly: [[-85, -60, 10], [85, -60, 10], [85, 25, 10], [45, 65, 10], [-85, 65, 10]] }, z1: -20, size: '170 × 125 with a 45° corner, R10, through + tabs', op: 'contour' },
+      { id: 'B', kind: 'cut', name: 'Bearing bore', geo: { circle: [-20, 0, 47] }, z1: -20, size: 'Ø47 H7 through', op: 'helix-bore' },
+      { id: 'C', kind: 'cut', name: 'Bearing shoulder', geo: { circle: [-20, 0, 62] }, z1: -4, size: 'Ø62 × 4 deep', op: 'circle-mill' },
+      { id: 'D', kind: 'cut', name: 'Cover screws', geo: { circles: { d: 5, at: [0, 60, 120, 180, 240, 300].map((a) => [+(-20 + 40 * Math.cos((a * Math.PI) / 180)).toFixed(3), +(40 * Math.sin((a * Math.PI) / 180)).toFixed(3)]) } }, z1: -20, size: '6 × M6 through on PCD 80 (Ø5 drill)', op: 'thread-mill' },
+      { id: 'E', kind: 'cut', name: 'Lightening pocket', geo: { rrect: [50, -30, 40, 30, 6] }, z1: -12, size: '40 × 30, R6, 12 deep', op: 'dynamic-mill' },
+      { id: 'F', kind: 'cut', name: 'Corner pocket', geo: { poly: [[30, 0, 6], [70, 0, 6], [70, 20, 6], [45, 45, 6], [30, 45, 6]] }, z1: -12, size: 'follows the 45° edge, R6, 12 deep', op: 'pocket' },
+      { id: 'G', kind: 'cut', name: 'Dowel holes', geo: { circles: { d: 8, at: [[-75, -50], [-75, 55]] } }, z1: -20, size: '2 × Ø8 H7 through', op: 'drill' },
+      { id: 'H', kind: 'cut', name: 'Oil slot', geo: { obround: [-72, 0, 30, 8, 90] }, z1: -6, size: '30 × 8, 6 deep', op: 'slot-mill' },
+    ],
+    plan: [
+      { op: 'dynamic-mill', page: 'chain-options', do: 'E with T2: draw the four clamps as Avoidance regions now; you will reuse them for every op near the edge.' },
+      { op: 'pocket', page: 'roughing', do: 'F with T3: High Speed, helix entry. The 45° corner is the test: Constant Overlap Spiral leaves less in it.' },
+      { op: 'helix-bore', page: 'rough-finish', do: 'B with T1: helix to Ø46.6, Break Through 0.5 into the spoilboard.' },
+      { op: 'circle-mill', page: 'finishing', do: 'C shoulder, then B finished to Ø47 H7 in one op with 2 finish passes + 1 spring pass, Wear comp.' },
+      { op: 'drill', page: 'cycle', do: 'Spot D and G. D: Ø5 through. G: Ø7.8 through, then ream Ø8 H7 (Bore #1). Same setup as the bore = position holds.' },
+      { op: 'thread-mill', page: 'cut', do: 'D: ID thread M6 × 1 through, bottom to top, 1 pass.' },
+      { op: 'slot-mill', page: 'rough-finish', do: 'H with T3: ramp entry 3°.' },
+      { op: 'contour', page: 'tabs', do: 'A last with T1: 4 tabs, keep them away from the 45° edge; Break Through 0.5.' },
+    ],
+    checks: ['Every toolpath stays 5 mm clear of the clamps (they reach 12 mm onto the stock)', 'Bore, shoulder and dowels in one setup', 'Profile last, on tabs', 'Target: under 24 minutes'],
+  },
+  {
+    id: 'gripper-finger', name: 'Robot gripper finger', level: 'advanced', ops: ['facing', 'dynamic-contour', 'circle-mill', 'drill', 'slot-mill', 'contour'], material: 'Aluminium 7075-T6',
+    stock: { x: 130, y: 45, z: 31 }, H: 30, base: { rrect: [0, 0, 130, 45, 0] }, fixture: fixtures.vise(6), machine: 'alu',
+    brief: { story: 'An L-shaped gripper finger, 50 a month. The inside corner is the weak point of the part: keep its radius, don\'t leave a step there. The second side (cut-off) is not part of this exercise.', qty: 50, cycle: 9, tol: ['Profile ±0.03', 'Pin hole Ø6 H7', 'Slot 6 +0.03 / 0'], ra: 'Ra 0.8 on the gripping face (Y0 face of the finger)' },
+    tools: [['T1', T.face50], ['T2', T.hem10], ['T3', T.em6], ['T4', T.spot10], ['T5', 'Ø5.5 drill'], ['T6', 'Ø3.3 drill (M4)'], ['T7', 'M4 tap'], ['T8', 'Ø5.8 drill + Ø6 H7 reamer'], ['T9', T.ch10]],
+    features: [
+      { id: 'face', kind: 'face', name: 'Top face', size: '1 mm', op: 'facing' },
+      { id: 'A', kind: 'outside', name: 'L-shaped profile', geo: { poly: [[-60, -18, 4], [60, -18, 5], [60, 0, 5], [-20, 0, 6], [-20, 18, 4], [-60, 18, 4]] }, z1: -20, size: '120 × 36, inside corner R6, 20 deep', op: 'dynamic-contour' },
+      { id: 'B', kind: 'cut', name: 'Counterbores M5', geo: { circles: { d: 9.5, at: [[-40, -9], [-40, 9]] } }, z1: -5.4, size: '2 × Ø9.5 × 5.4', op: 'circle-mill' },
+      { id: 'B2', kind: 'cut', name: 'Counterbores M5', hidden: true, geo: { circles: { d: 5.5, at: [[-40, -9], [-40, 9]] } }, z1: -26, op: 'drill' },
+      { id: 'C', kind: 'cut', name: 'Pin hole', geo: { circle: [40, -9, 6] }, z1: -24, size: 'Ø6 H7 × 24', op: 'drill' },
+      { id: 'D', kind: 'cut', name: 'Angled slot', geo: { obround: [12, -9, 24, 6, 15] }, z1: -8, size: '24 × 6 at 15°, 8 deep', op: 'slot-mill' },
+      { id: 'E', kind: 'cut', name: 'M4 tapped hole', geo: { circle: [-53, 0, 3.3] }, z1: -12, size: 'M4 × 8 deep thread, Ø3.3 × 12', op: 'drill' },
+      { id: 'F', kind: 'note', name: 'Edge chamfer', size: '0.5 × 45° on the whole profile', op: 'contour' },
+    ],
+    plan: [
+      { op: 'facing', page: 'cut', do: 'Face 1 mm, one pass.' },
+      { op: 'dynamic-contour', page: 'contour-wall', do: 'A with T2: stock thickness 4.5 on the long sides; Minimum toolpath radius small enough for the R6 inside corner (it must fit a Ø10 tool).' },
+      { op: 'dynamic-contour', page: 'finishing', do: '1 finish pass, Wear comp, so the gripping face can be sized.' },
+      { op: 'circle-mill', page: 'cut', do: 'B with T3 after the Ø5.5 holes are drilled.' },
+      { op: 'drill', page: 'cycle', do: 'C: Ø5.8 then ream. E: Ø3.3 Peck drill, M4 Tap (G84). B2: Ø5.5 through the base.' },
+      { op: 'slot-mill', page: 'cut', do: 'D with T3: Compensation Wear, climb. The slot is at 15°, so chain it from the drawing, don\'t retype it.' },
+      { op: 'contour', page: 'cut', do: 'F with T9: Contour type 2D chamfer, width 0.5, the whole profile.' },
+    ],
+    checks: ['The inside corner R6 is one smooth arc after finishing (no step)', 'Profile depth Z-20, jaws at Z-24', 'The 15° slot wall is 3.7 mm from the edge: no deflection on a light finish pass', 'Target: under 9 minutes'],
+  },
+  {
+    id: 'cross-manifold', name: 'Cross-drilled manifold', level: 'expert', ops: ['facing', 'peel-mill', 'circle-mill', 'drill', 'helix-bore', 'thread-mill'], material: 'Aluminium 6061-T6',
+    stock: { x: 160, y: 100, z: 41 }, H: 40, base: { rrect: [0, 0, 160, 100, 0] }, fixture: fixtures.vise(6), machine: 'alu',
+    brief: { story: 'A test manifold for a hydraulics lab: two crossing channels, four ports and a deep sensor bore. The channels cross each other and the ports sit close to them, so the order of operations and burrs matter.', qty: 12, cycle: 18, tol: ['Sensor bore Ø20 H7 × 30', 'Port counterbores Ø18 +0.1', 'Channels 12 and 12 +0.05 / 0', 'Dowels Ø6 H7'], ra: 'Ra 0.8 in the sensor bore' },
+    tools: [['T1', T.face50], ['T2', T.hem10], ['T3', T.em8], ['T4', T.spot10], ['T5', 'Ø10 carbide drill, through-coolant'], ['T6', 'Ø6.8 drill'], ['T7', 'Ø6 thread mill, M8 × 1.25'], ['T8', 'Ø5.8 drill + Ø6 H7 reamer']],
+    features: [
+      { id: 'face', kind: 'face', name: 'Top face', size: '1 mm', op: 'facing' },
+      { id: 'A', kind: 'channel', name: 'Channel along Y', geo: { band: [-50, -38] }, z1: -12, size: '12 wide, 12 deep, open both ends', op: 'peel-mill' },
+      { id: 'B', kind: 'channel', name: 'Channel along X', geo: { band: [20, 32], axis: 'y' }, z1: -8, size: '12 wide, 8 deep, crosses A', op: 'peel-mill' },
+      { id: 'C', kind: 'cut', name: 'Port counterbores', geo: { circles: { d: 18, at: [[-15, -20], [25, -20], [60, -20], [60, 5]] } }, z1: -3, size: '4 × Ø18 × 3', op: 'circle-mill' },
+      { id: 'C2', kind: 'cut', name: 'Port holes', geo: { circles: { d: 10, at: [[-15, -20], [25, -20], [60, -20], [60, 5]] } }, z1: -30, size: '4 × Ø10 × 30 (peck)', op: 'drill' },
+      { id: 'D', kind: 'cut', name: 'Sensor bore', geo: { circle: [-66, -20, 20] }, z1: -30, size: 'Ø20 H7 × 30', op: 'helix-bore' },
+      { id: 'E', kind: 'cut', name: 'M8 mounting holes', geo: { circles: { d: 6.8, at: [[-72, -42], [72, -42], [-72, 42], [72, 42]] } }, z1: -18, size: '4 × M8 × 14 deep thread', op: 'thread-mill' },
+      { id: 'F', kind: 'cut', name: 'Dowels (poka-yoke)', geo: { circles: { d: 6, at: [[-72, 0], [72, -5]] } }, z1: -15, size: '2 × Ø6 H7 × 15, offset on purpose', op: 'drill' },
+    ],
+    plan: [
+      { op: 'facing', page: 'cut', do: 'Face 1 mm.' },
+      { op: 'peel-mill', page: 'cut', do: 'A then B with T2, entry and exit extended 5 mm past the part. Cut the deeper channel first so B breaks into A only at its own depth.' },
+      { op: 'helix-bore', page: 'rough-finish', do: 'D with T3: rough pitch 1 to Ø19.6, finish pass at the bottom.' },
+      { op: 'circle-mill', page: 'finishing', do: 'D finished to H7 (2 passes + spring pass), then the C counterbores.' },
+      { op: 'drill', page: 'cycle', do: 'Spot everything. C2: Ø10 Peck drill (G83), first peck 1 × D. E: Ø6.8 × 18. F: drill + ream.' },
+      { op: 'thread-mill', page: 'cut', do: 'E with T7: M8 × 1.25, 14 deep, bottom to top.' },
+    ],
+    checks: ['The port at (60, 5) is 6 mm from channel B: check the wall in Verify', 'Deburr where the channels cross (a chamfer pass with a Contour, or note it for the bench)', 'The dowels are deliberately not symmetrical so the part cannot go on backwards', 'Target: under 18 minutes'],
+  },
+  {
+    id: 'mould-insert', name: 'Mould insert with stepped islands', level: 'expert', ops: ['facing', 'dynamic-mill', 'area-mill', 'pocket', 'drill', 'thread-mill'], material: 'Tool steel 1.2312, pre-hardened 30 HRC',
+    stock: { x: 140, y: 100, z: 46 }, H: 45, base: { rrect: [0, 0, 140, 100, 0] }, fixture: fixtures.vise(8), machine: 'steel',
+    brief: { story: 'A cavity insert: a 28 mm deep pocket with three islands that stop at different heights. Rough it with constant load, then face every island top without touching the others. Two pieces, steel, so tool life matters more than seconds.', qty: 2, cycle: 45, tol: ['Island heights ±0.02 (Z0, Z-10, Z-18)', 'Floor Z-28 ±0.02', 'Walls ±0.02'], ra: 'Ra 0.8 on the floor and island tops' },
+    tools: [['T1', T.face50], ['T2', T.hem12], ['T3', 'Ø8 4-flute HEM end mill, AlTiN'], ['T4', 'Ø6 4-flute end mill, AlTiN (finishing)'], ['T5', T.spot10], ['T6', 'Ø6 carbide drill'], ['T7', 'Ø8.5 drill'], ['T8', 'Ø8 thread mill, M10 × 1.5']],
+    features: [
+      { id: 'face', kind: 'face', name: 'Top face', size: '1 mm', op: 'facing' },
+      { id: 'A', kind: 'cut', name: 'Cavity', geo: { rrect: [0, 0, 110, 70, 12] }, z1: -28, size: '110 × 70, R12, 28 deep', op: 'dynamic-mill' },
+      { id: 'B', kind: 'island', name: 'Island to the top', geo: { rrect: [-30, 0, 24, 40, 5] }, top: 0, size: '24 × 40, R5, top at Z0', op: 'dynamic-mill' },
+      { id: 'C', kind: 'island', name: 'Round island', geo: { circle: [20, 15, 22] }, top: -10, size: 'Ø22, top at Z-10', op: 'area-mill' },
+      { id: 'D', kind: 'island', name: 'Low island', geo: { rrect: [25, -18, 30, 14, 4] }, top: -18, size: '30 × 14, R4, top at Z-18', op: 'area-mill' },
+      { id: 'E', kind: 'cut', name: 'Ejector holes', geo: { circles: { d: 6, at: [[-5, 28], [-5, -28], [45, 28]] } }, z1: -45, size: '3 × Ø6 through the floor', op: 'drill' },
+      { id: 'G', kind: 'cut', name: 'M10 mounting holes', geo: { circles: { d: 8.5, at: [[-60, -40], [60, -40], [-60, 40], [60, 40]] } }, z1: -22, size: '4 × M10 × 18 deep thread', op: 'thread-mill' },
+    ],
+    plan: [
+      { op: 'dynamic-mill', page: 'chain-options', do: 'A with T2: machining region = cavity, avoidance regions = the three islands. Stock to leave 0.3.' },
+      { op: 'dynamic-mill', page: 'depth-cuts', do: 'Use island depths: the tool steps down to each island top instead of cutting air over them. 2 depths of 14.' },
+      { op: 'area-mill', page: 'stock-page', do: 'Rest material from the Dynamic op with T3: clears what the Ø12 left in the corners and between the islands.' },
+      { op: 'area-mill', page: 'depth-cuts', do: 'Island facing on, so the tops of C (Z-10) and D (Z-18) are finished flat.' },
+      { op: 'pocket', page: 'finishing', do: 'Walls and floor with T4: finish passes only at final depth, spring pass. Pocket type Standard, islands chained.' },
+      { op: 'drill', page: 'cycle', do: 'E: Ø6 Peck through the floor (17 mm of steel under the cavity). G: Ø8.5 × 22.' },
+      { op: 'thread-mill', page: 'cut', do: 'G with T8: M10 × 1.5, 18 deep.' },
+    ],
+    checks: ['Tool stick-out: T2 must reach Z-28 with the holder clear of the 12 mm islands', 'Each island top is finished once and not touched again', 'Chip load with chip thinning at 8–10% stepover (calculator)', 'Ejector holes are under the floor: check break-through over the parallels'],
+  },
+  {
+    id: 'aero-rib', name: 'Lightened aerospace rib', level: 'expert', ops: ['dynamic-mill', 'pocket', 'contour', 'drill'], material: 'Aluminium 7075-T7351',
+    stock: { x: 220, y: 90, z: 15 }, H: 15, base: { rrect: [0, 0, 220, 90, 0] }, fixture: fixtures.clamps(8), machine: 'alu',
+    brief: { story: 'A tapered rib with four lightening pockets, 3 mm ribs and a 2 mm floor. 60 a batch. The hard part is keeping the thin walls straight and the floor from vibrating. Blank arrives ground to 15 mm.', qty: 60, cycle: 20, tol: ['Rib thickness 3 ±0.1', 'Floor 2 ±0.1', 'Profile ±0.1', 'Holes Ø4 +0.05'], ra: 'Ra 1.6' },
+    tools: [['T1', T.hem10], ['T2', T.em8], ['T3', 'Ø6 3-flute end mill, long neck'], ['T4', T.spot10], ['T5', 'Ø4 drill']],
+    features: (() => {
+      const yt = (x) => 38 - 0.14 * (x + 100) - 3.2;
+      const pk = (xa, xb) => ({ poly: [[xa, -28, 5], [xb, -28, 5], [xb, +yt(xb).toFixed(2), 5], [xa, +yt(xa).toFixed(2), 5]] });
+      return [
+        { id: 'A', kind: 'outside', name: 'Tapered outside profile', geo: { poly: [[-100, -38, 10], [100, -38, 10], [100, 10, 10], [-100, 38, 10]] }, z1: -15, size: '200 long, 76 → 48 tall, R10, through + tabs', op: 'contour' },
+        { id: 'B', kind: 'cut', name: 'Lightening pocket 1', geo: pk(-90, -46.5), z1: -13, size: '2 mm floor, R5 corners', op: 'dynamic-mill' },
+        { id: 'C', kind: 'cut', name: 'Lightening pocket 2', geo: pk(-43.5, -1.5), z1: -13, size: '2 mm floor, 3 mm ribs', op: 'dynamic-mill' },
+        { id: 'D', kind: 'cut', name: 'Lightening pocket 3', geo: pk(1.5, 43.5), z1: -13, size: '2 mm floor, 3 mm ribs', op: 'dynamic-mill' },
+        { id: 'E', kind: 'cut', name: 'Lightening pocket 4', geo: pk(46.5, 90), z1: -13, size: '2 mm floor', op: 'dynamic-mill' },
+        { id: 'F', kind: 'cut', name: 'Fastener holes', geo: { circles: { d: 4, at: [[-68, -33], [-22, -33], [22, -33], [68, -33]] } }, z1: -15, size: '4 × Ø4 through the flange', op: 'drill' },
+      ];
+    })(),
+    plan: [
+      { op: 'dynamic-mill', page: 'cut', do: 'B–E with T1, stock to leave 0.3 on walls and floor. All four pockets at the same time, by depth, so the ribs lose material evenly on both sides.' },
+      { op: 'dynamic-mill', page: 'depth-cuts', do: 'Two depths (6.5 + 6.5), not one: the floor stays stiffer while the bulk comes out.' },
+      { op: 'pocket', page: 'finishing', do: 'Finish walls with T2: Pocket, Machine finish passes only at final depth off, 2 passes of 0.15 + spring pass, so each rib is finished down in steps while it still has support.' },
+      { op: 'pocket', page: 'depth-cuts', do: 'Finish the 2 mm floor last with light passes.' },
+      { op: 'drill', page: 'cycle', do: 'F: spot, then Ø4 through, 0.5 into the spoilboard.' },
+      { op: 'contour', page: 'tabs', do: 'A last: 4 tabs on the bottom flange, none on the thin taper.' },
+    ],
+    checks: ['Ribs measured 3.0 in Verify (not 2.7 from deflection: use spring passes)', 'Pockets before the outside profile', 'Clamps reach 8 mm onto the stock corners: keep 5 mm away', 'Target: under 20 minutes'],
+  },
+  {
+    id: 'indexing-plate', name: 'Indexing plate', level: 'advanced', ops: ['slot-mill', 'helix-bore', 'circle-mill', 'drill', 'contour'], material: 'Aluminium 6082-T6',
+    stock: { x: 160, y: 160, z: 20 }, H: 20, base: { rrect: [0, 0, 160, 160, 0] }, fixture: fixtures.clamps(12), machine: 'alu',
+    brief: { story: 'A round indexing plate with 12 radial slots. Clamped on the corners of the square blank, which stay outside the round part. The slots are the job: 12 identical ones, programmed once and repeated, not drawn 12 times by hand.', qty: 20, cycle: 16, tol: ['Slots 8 +0.03 / 0, angular position ±0.05°', 'Centre bore Ø40 H7', 'Ø150 ±0.05'], ra: 'Ra 1.6' },
+    tools: [['T1', T.em12], ['T2', T.em6], ['T3', T.em8], ['T4', T.spot10], ['T5', 'Ø6.6 drill'], ['T6', 'Ø5.8 drill + Ø6 H7 reamer']],
+    features: [
+      { id: 'A', kind: 'outside', name: 'Round outside', geo: { circle: [0, 0, 150] }, z1: -20, size: 'Ø150 through + tabs', op: 'contour' },
+      { id: 'B', kind: 'cut', name: 'Centre bore', geo: { circle: [0, 0, 40] }, z1: -20, size: 'Ø40 H7 through', op: 'helix-bore' },
+      ...Array.from({ length: 12 }, (_, i) => {
+        const a = i * 30, r = 52;
+        return { id: i ? `C${i + 1}` : 'C', kind: 'cut', name: 'Radial slots', hidden: i > 0, geo: { obround: [+(r * Math.cos((a * Math.PI) / 180)).toFixed(3), +(r * Math.sin((a * Math.PI) / 180)).toFixed(3), 20, 8, a] }, z1: -8, size: '12 × 20 × 8 wide, 8 deep, every 30°', op: 'slot-mill' };
+      }),
+      { id: 'D', kind: 'cut', name: 'Counterbores M6', geo: { circles: { d: 11, at: [15, 75, 135, 195, 255, 315].map((a) => [+(30 * Math.cos((a * Math.PI) / 180)).toFixed(3), +(30 * Math.sin((a * Math.PI) / 180)).toFixed(3)]) } }, z1: -6.4, size: '6 × Ø11 × 6.4 on PCD 60', op: 'circle-mill' },
+      { id: 'D2', kind: 'cut', name: 'Counterbores M6', hidden: true, geo: { circles: { d: 6.6, at: [15, 75, 135, 195, 255, 315].map((a) => [+(30 * Math.cos((a * Math.PI) / 180)).toFixed(3), +(30 * Math.sin((a * Math.PI) / 180)).toFixed(3)]) } }, z1: -20, op: 'drill' },
+      { id: 'E', kind: 'cut', name: 'Dowels', geo: { circles: { d: 6, at: [[+(68 * Math.cos(Math.PI / 12)).toFixed(3), +(68 * Math.sin(Math.PI / 12)).toFixed(3)], [+(68 * Math.cos((13 * Math.PI) / 12)).toFixed(3), +(68 * Math.sin((13 * Math.PI) / 12)).toFixed(3)]] } }, z1: -20, size: '2 × Ø6 H7 through on PCD 136', op: 'drill' },
+    ],
+    plan: [
+      { op: 'slot-mill', page: 'rough-finish', do: 'C with T2: chain all 12 slots in one Slot Mill (or one slot + a Transform Rotate of the toolpath, 12 instances × 30°). Ramp 3°, 1 finish pass.' },
+      { op: 'helix-bore', page: 'rough-finish', do: 'B with T1: helix to Ø39.6, break through 0.5.' },
+      { op: 'circle-mill', page: 'finishing', do: 'B finished to H7, then the D counterbores (after drilling D2).' },
+      { op: 'drill', page: 'hole-definition', do: 'Spot all. D2 Ø6.6 through; E drill + ream. Sort holes in a circle so the table does not zigzag.' },
+      { op: 'contour', page: 'tabs', do: 'A last: 3 tabs at 120°, Break Through 0.5. The clamps are on the blank corners, outside the Ø150.' },
+    ],
+    checks: ['All 12 slots identical (one geometry rotated, not 12 hand-drawn)', 'The slots start 22 mm from the bore and end 13 mm from the outside', 'Target: under 16 minutes'],
+  },
+  {
+    id: 'fixture-base', name: 'Fixture base plate', level: 'expert', ops: ['peel-mill', 'drill', 'thread-mill', 'circle-mill', 'contour'], material: 'Aluminium 6082-T6',
+    stock: { x: 300, y: 200, z: 25 }, H: 25, base: { rrect: [0, 0, 300, 200, 0] }, fixture: fixtures.clamps(8), machine: 'steel',
+    brief: { story: 'A modular fixture plate for the shop itself: 24 threaded holes on a 40 mm grid, crossing locating slots, dowel holes and two lifting counterbores. Mostly holes, so the cycle time is won or lost in the drilling order, the rapids and the tool changes.', qty: 6, cycle: 40, tol: ['Grid positions ±0.02', 'Locating slots 12 H7', 'Dowels Ø10 H7'], ra: 'Ra 1.6 top face (already ground)' },
+    tools: [['T1', T.em12], ['T2', T.hem10], ['T3', T.spot10], ['T4', 'Ø6.8 drill'], ['T5', 'M8 × 1.25 machine tap'], ['T6', 'Ø9.8 drill + Ø10 H7 reamer'], ['T7', 'Ø11 drill'], ['T8', T.em8]],
+    features: [
+      { id: 'A', kind: 'outside', name: 'Outside profile', geo: { rrect: [0, 0, 280, 180, 5] }, z1: -25, size: '280 × 180, R5, through + tabs', op: 'contour' },
+      { id: 'B', kind: 'cut', name: 'M8 grid', geo: { circles: { d: 6.8, at: [-100, -60, -20, 20, 60, 100].flatMap((x) => [-60, -20, 20, 60].map((y) => [x, y])) } }, z1: -20, size: '24 × M8, 16 deep thread, 40 mm grid', op: 'drill' },
+      { id: 'C', kind: 'channel', name: 'Locating slot along Y', geo: { band: [-6, 6] }, z1: -10, size: '12 H7, 10 deep', op: 'peel-mill' },
+      { id: 'D', kind: 'channel', name: 'Locating slot along X', geo: { band: [-6, 6], axis: 'y' }, z1: -10, size: '12 H7, 10 deep', op: 'peel-mill' },
+      { id: 'E', kind: 'cut', name: 'Dowel holes', geo: { circles: { d: 10, at: [[-120, -70], [120, -70], [-120, 70], [120, 70]] } }, z1: -20, size: '4 × Ø10 H7 × 20', op: 'drill' },
+      { id: 'F', kind: 'cut', name: 'Lifting counterbores', geo: { circles: { d: 17, at: [[-120, 30], [120, 30]] } }, z1: -10.5, size: '2 × Ø17 × 10.5 (M10 SHCS)', op: 'circle-mill' },
+      { id: 'F2', kind: 'cut', name: 'Lifting counterbores', hidden: true, geo: { circles: { d: 11, at: [[-120, 30], [120, 30]] } }, z1: -25, op: 'drill' },
+    ],
+    plan: [
+      { op: 'peel-mill', page: 'cut', do: 'C and D with T2: rough to 11.6 wide; then a Contour finish pass on each wall (Wear comp) for the H7.' },
+      { op: 'drill', page: 'hole-definition', do: 'B: 2D sort, zigzag along X: 24 holes, every millimetre of rapid counts × 3 tools (spot, drill, tap).' },
+      { op: 'drill', page: 'cycle', do: 'B: spot, Ø6.8 Peck × 20, rigid tap M8 16 deep. E: Ø9.8 + ream. F2: Ø11 through.' },
+      { op: 'circle-mill', page: 'cut', do: 'F with T8: Ø17 × 10.5 counterbores.' },
+      { op: 'contour', page: 'tabs', do: 'A last with T1: 6 tabs (it is a big plate), Break Through 0.5.' },
+    ],
+    checks: ['Tool changes: count them, then try to remove one', 'The grid holes next to the slots keep 10 mm of wall', 'Clamps reach 8 mm onto the stock: the profile is 10 mm in from the blank edge', 'Target: under 40 minutes'],
+  },
 ];
 
 export const partById = Object.fromEntries(parts.map((p) => [p.id, p]));
-export const levels = { single: 'One toolpath', beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
+export const levels = { single: 'One toolpath', beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert' };

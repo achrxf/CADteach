@@ -30,9 +30,45 @@ function obround(cx, cy, len, w, angle, layer) {
   ];
 }
 
+// Polygon with a fillet radius per corner: pts [[x, y, r?], ...] in any order.
+// Returns the corners as { t1, t2, c, r, left } (tangent points, centre, left turn?) in CCW order.
+function filletCorners(pts0) {
+  const a2 = pts0.reduce((s, [x, y], i) => { const [x2, y2] = pts0[(i + 1) % pts0.length]; return s + x * y2 - x2 * y; }, 0);
+  const pts = a2 < 0 ? [...pts0].reverse() : pts0;
+  return pts.map((P, i) => {
+    const A = pts[(i - 1 + pts.length) % pts.length], B = pts[(i + 1) % pts.length], r = P[2] || 0;
+    const u1 = norm2([A[0] - P[0], A[1] - P[1]]), u2 = norm2([B[0] - P[0], B[1] - P[1]]);
+    const left = (P[0] - A[0]) * (B[1] - P[1]) - (P[1] - A[1]) * (B[0] - P[0]) > 0;
+    if (!r) return { t1: [P[0], P[1]], t2: [P[0], P[1]], r: 0, left };
+    const half = Math.acos(Math.max(-1, Math.min(1, u1[0] * u2[0] + u1[1] * u2[1]))) / 2;
+    const t = r / Math.tan(half), bis = norm2([u1[0] + u2[0], u1[1] + u2[1]]), d = r / Math.sin(half);
+    return { t1: [P[0] + u1[0] * t, P[1] + u1[1] * t], t2: [P[0] + u2[0] * t, P[1] + u2[1] * t], c: [P[0] + bis[0] * d, P[1] + bis[1] * d], r, left };
+  });
+}
+const norm2 = ([x, y]) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+const ang = (c, p) => (Math.atan2(p[1] - c[1], p[0] - c[0]) * 180) / Math.PI;
+
+function polyEnts(pts, layer) {
+  const C = filletCorners(pts), out = [];
+  C.forEach((k, i) => {
+    const nx = C[(i + 1) % C.length];
+    if (k.r) out.push(k.left ? { t: 'arc', c: k.c, r: k.r, a0: ang(k.c, k.t1), a1: ang(k.c, k.t2), layer } : { t: 'arc', c: k.c, r: k.r, a0: ang(k.c, k.t2), a1: ang(k.c, k.t1), layer });
+    out.push({ t: 'line', a: k.t2, b: nx.t1, layer });
+  });
+  return out;
+}
+
+// Rotate entities about (cx, cy) by `deg`.
+function rotEnts(ents, cx, cy, deg) {
+  if (!deg) return ents;
+  const c = Math.cos(rad(deg)), s = Math.sin(rad(deg));
+  const R = ([x, y]) => [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c];
+  return ents.map((e) => (e.t === 'line' ? { ...e, a: R(e.a), b: R(e.b) } : { ...e, c: R(e.c), a0: e.a0 + deg, a1: e.a1 + deg }));
+}
+
 export function entities(part) {
   const out = [];
-  if (part.base.rrect) out.push(...rrect(...part.base.rrect, 'BLANK'));
+  if (part.base.rrect) out.push(...rrect(...part.base.rrect.slice(0, 5), 'BLANK'));
   for (const f of part.features) {
     const zp = f.z1 != null ? `_Z${f.z1}` : '';
     const L = f.layer || `${f.id}_${(f.name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 30 - f.id.length - zp.length)}${zp}`;
@@ -40,10 +76,14 @@ export function entities(part) {
     if (!g) continue;
     if (g.band) {
       const bb = bbox(polyOf(part.base));
-      for (const x of g.band) if (x > bb[0] && x < bb[2]) out.push({ t: 'line', a: [x, bb[1]], b: [x, bb[3]], layer: L });
+      for (const v of g.band) {
+        if (g.axis === 'y') { if (v > bb[1] && v < bb[3]) out.push({ t: 'line', a: [bb[0], v], b: [bb[2], v], layer: L }); }
+        else if (v > bb[0] && v < bb[2]) out.push({ t: 'line', a: [v, bb[1]], b: [v, bb[3]], layer: L });
+      }
       continue;
     }
-    if (g.rrect) out.push(...rrect(...g.rrect, L));
+    if (g.rrect) { const [cx, cy, w, h, r, a = 0] = g.rrect; out.push(...rotEnts(rrect(cx, cy, w, h, r, L), cx, cy, a)); }
+    if (g.poly) out.push(...polyEnts(g.poly, L));
     if (g.obround) out.push(...obround(...g.obround, L));
     if (g.circle) out.push({ t: 'circle', c: [g.circle[0], g.circle[1]], r: g.circle[2] / 2, layer: L });
     if (g.circles) for (const [x, y] of g.circles.at) out.push({ t: 'circle', c: [x, y], r: g.circles.d / 2, layer: L });
@@ -97,11 +137,26 @@ export function svgPaths(part) {
 const SEG = 48;
 function polyOf(geo) {
   if (geo.rrect) {
-    const [cx, cy, w, h, r0] = geo.rrect, r = Math.min(r0, w / 2, h / 2), pts = [];
-    if (!r) return [[cx - w / 2, cy - h / 2], [cx + w / 2, cy - h / 2], [cx + w / 2, cy + h / 2], [cx - w / 2, cy + h / 2]];
-    const corners = [[cx + w / 2 - r, cy - h / 2 + r, -90], [cx + w / 2 - r, cy + h / 2 - r, 0], [cx - w / 2 + r, cy + h / 2 - r, 90], [cx - w / 2 + r, cy - h / 2 + r, 180]];
-    for (const [x, y, a] of corners) for (let i = 0; i <= 8; i++) { const t = rad(a + (90 * i) / 8); pts.push([x + r * Math.cos(t), y + r * Math.sin(t)]); }
-    return pts;
+    const [cx, cy, w, h, r0, a = 0] = geo.rrect, r = Math.min(r0, w / 2, h / 2);
+    let pts = [];
+    if (!r) pts = [[cx - w / 2, cy - h / 2], [cx + w / 2, cy - h / 2], [cx + w / 2, cy + h / 2], [cx - w / 2, cy + h / 2]];
+    else {
+      const corners = [[cx + w / 2 - r, cy - h / 2 + r, -90], [cx + w / 2 - r, cy + h / 2 - r, 0], [cx - w / 2 + r, cy + h / 2 - r, 90], [cx - w / 2 + r, cy - h / 2 + r, 180]];
+      for (const [x, y, q] of corners) for (let i = 0; i <= 8; i++) { const t = rad(q + (90 * i) / 8); pts.push([x + r * Math.cos(t), y + r * Math.sin(t)]); }
+    }
+    if (!a) return pts;
+    const c = Math.cos(rad(a)), s = Math.sin(rad(a));
+    return pts.map(([x, y]) => [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]);
+  }
+  if (geo.poly) {
+    const out = [];
+    for (const k of filletCorners(geo.poly)) {
+      if (!k.r) { out.push(k.t1); continue; }
+      let a0 = ang(k.c, k.t1), a1 = ang(k.c, k.t2);
+      if (k.left) { while (a1 < a0) a1 += 360; } else { while (a1 > a0) a1 -= 360; }
+      for (let i = 0; i <= 8; i++) { const t = rad(a0 + ((a1 - a0) * i) / 8); out.push([k.c[0] + k.r * Math.cos(t), k.c[1] + k.r * Math.sin(t)]); }
+    }
+    return out;
   }
   if (geo.circle) {
     const [cx, cy, d] = geo.circle, pts = [];
@@ -128,17 +183,21 @@ function pointIn(pt, poly) {
   }
   return c;
 }
-// Clip a convex polygon to x <= a (keep = 'left') or x >= a ('right').
-function clipX(poly, a, keep) {
-  const inn = (p) => (keep === 'left' ? p[0] <= a : p[0] >= a), out = [];
+// Clip a polygon to coordinate[k] <= a (keep = 'low') or >= a ('high'); k = 0 for X, 1 for Y.
+// Exact for convex outlines (channels are only used on convex ones).
+function clipAxis(poly, a, keep, k) {
+  const inn = (p) => (keep === 'low' ? p[k] <= a : p[k] >= a), out = [];
   for (let i = 0; i < poly.length; i++) {
     const p = poly[i], q = poly[(i + 1) % poly.length];
     if (inn(p)) out.push(p);
-    if (inn(p) !== inn(q)) { const t = (a - p[0]) / (q[0] - p[0]); out.push([a, p[1] + t * (q[1] - p[1])]); }
+    if (inn(p) !== inn(q)) {
+      const t = (a - p[k]) / (q[k] - p[k]);
+      out.push(k === 0 ? [a, p[1] + t * (q[1] - p[1])] : [p[0] + t * (q[0] - p[0]), a]);
+    }
   }
-  return out.length > 2 ? out : null;
+  return out.length > 2 && Math.abs(area(out)) > 1e-3 ? out : null;
 }
-const area = (p) => p.reduce((s, [x, y], i) => { const [x2, y2] = p[(i + 1) % p.length]; return s + x * y2 - x2 * y; }, 0) / 2;
+function area(p) { return p.reduce((s, [x, y], i) => { const [x2, y2] = p[(i + 1) % p.length]; return s + x * y2 - x2 * y; }, 0) / 2; }
 const ccw = (p) => (area(p) < 0 ? [...p].reverse() : p);
 const cw = (p) => (area(p) > 0 ? [...p].reverse() : p);
 
@@ -160,8 +219,8 @@ export function slabs(part) {
     const os = outsides.filter((o) => o.z1 <= zb + 1e-6);
     let pieces = [os.length ? os[0].poly : base];
     for (const ch of channels.filter((c) => c.z1 <= zb + 1e-6)) {
-      const [x0, x1] = ch.geo.band;
-      pieces = pieces.flatMap((p) => [clipX(p, x0, 'left'), clipX(p, x1, 'right')]).filter(Boolean);
+      const [v0, v1] = ch.geo.band, k = ch.geo.axis === 'y' ? 1 : 0;
+      pieces = pieces.flatMap((p) => [clipAxis(p, v0, 'low', k), clipAxis(p, v1, 'high', k)]).filter(Boolean);
     }
     const act = cuts.filter((c) => c.z0 >= zt - 1e-6 && c.z1 <= zb + 1e-6);
     const isl = islands.filter((i) => i.top >= zt - 1e-6 && act.some((c) => inside(i.bb, c.bb)));
@@ -185,3 +244,6 @@ export function slabs(part) {
   }
   return out;
 }
+
+// Bounding box [x0, y0, x1, y1] of one geometry (for drawings and labels).
+export const geoBox = (geo) => bbox(polyOf(geo));

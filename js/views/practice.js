@@ -4,7 +4,7 @@ import { html, raw, store, toast } from '../util.js';
 import { nm } from '../i18n.js';
 import { opById, groups } from '../data/index.js';
 import { parts, partById, machines, levels } from '../data/practice.js';
-import { svgPaths } from '../practice-geom.js';
+import { svgPaths, geoBox } from '../practice-geom.js';
 
 const fmt = (n) => String(+n.toFixed(2));
 const shownFeats = (p) => p.features.filter((f) => !f.hidden);
@@ -13,29 +13,30 @@ const groupOf = (opId) => opById[opId]?.group;
 // Top-view drawing: geometry, feature letters, overall size.
 export function drawing(part, { small = false } = {}) {
   const outside = part.features.find((f) => f.kind === 'outside');
-  const [, , bw, bh] = part.base.rrect;
-  const [, , pw, ph] = outside ? outside.geo.rrect : part.base.rrect;
+  const bb = geoBox(part.base), ob = outside ? geoBox(outside.geo) : bb;
+  const bw = bb[2] - bb[0], bh = bb[3] - bb[1];
+  const pw = +(ob[2] - ob[0]).toFixed(1), ph = +(ob[3] - ob[1]).toFixed(1);
   const m = small ? 6 : 26;
-  const vb = [-bw / 2 - m, -bh / 2 - m, bw + 2 * m, bh + 2 * m];
+  const vb = [bb[0] - m, -bb[3] - m, bw + 2 * m, bh + 2 * m];
   const paths = svgPaths(part);
   const bubble = (f) => {
     const g = f.geo; if (!g || small) return '';
     let x, y;
-    if (g.rrect) [x, y] = [g.rrect[0], g.rrect[1] + (f.kind === 'outside' ? g.rrect[3] / 2 : g.rrect[3] / 2 - 6)];
-    else if (g.circle) { const k = f.kind === 'island' ? -0.72 : 0.72; [x, y] = [g.circle[0] + (g.circle[2] / 2) * k, g.circle[1] + (g.circle[2] / 2) * 0.72]; }
-    else if (g.circles) [x, y] = [g.circles.at[g.circles.at.length - 1][0] + 5, g.circles.at[g.circles.at.length - 1][1] + 5];
+    if (g.band) {
+      const mid = (g.band[0] + Math.min(g.band[1], g.axis === 'y' ? bb[3] : bb[2])) / 2;
+      [x, y] = g.axis === 'y' ? [bb[2] - 10, mid] : [mid, bb[1] + 10];
+    } else if (g.circles) [x, y] = [g.circles.at[g.circles.at.length - 1][0] + 5, g.circles.at[g.circles.at.length - 1][1] + 5];
     else if (g.obround) [x, y] = [g.obround[0], g.obround[1]];
-    else if (g.band) [x, y] = [Math.min((g.band[0] + g.band[1]) / 2, bw / 2 - 8), 0];
-    if (f.kind === 'outside') y = -y - 0; // place on the bottom edge (SVG y is flipped)
-    else y = -y;
-    return `<g class="dw-tag"><circle cx="${fmt(x)}" cy="${fmt(y)}" r="5"/><text x="${fmt(x)}" y="${fmt(y + 1.9)}">${f.id}</text></g>`;
+    else if (g.circle) { const k = f.kind === 'island' ? -0.72 : 0.72; [x, y] = [g.circle[0] + (g.circle[2] / 2) * k, g.circle[1] + (g.circle[2] / 2) * 0.72]; }
+    else { const b = geoBox(g); [x, y] = f.kind === 'outside' ? [(b[0] + b[2]) / 2, b[3]] : [(b[0] + b[2]) / 2, b[3] - 6]; }
+    return `<g class="dw-tag"><circle cx="${fmt(x)}" cy="${fmt(-y)}" r="5"/><text x="${fmt(x)}" y="${fmt(-y + 1.9)}">${f.id}</text></g>`;
   };
   const dim = small ? '' : `
     <g class="dw-dim">
-      <path d="M${-pw / 2} ${bh / 2 + 6}v${m - 8}M${pw / 2} ${bh / 2 + 6}v${m - 8}M${-pw / 2} ${bh / 2 + m - 7}H${pw / 2}" />
-      <text x="0" y="${bh / 2 + m - 9}">${pw}</text>
-      <path d="M${bw / 2 + 6} ${-ph / 2}h${m - 8}M${bw / 2 + 6} ${ph / 2}h${m - 8}M${bw / 2 + m - 7} ${-ph / 2}V${ph / 2}" />
-      <text x="${bw / 2 + m - 9}" y="0" transform="rotate(-90 ${bw / 2 + m - 9} 0)">${ph}</text>
+      <path d="M${ob[0]} ${-bb[1] + 6}V${-bb[1] + m - 2}M${ob[2]} ${-bb[1] + 6}V${-bb[1] + m - 2}M${ob[0]} ${-bb[1] + m - 7}H${ob[2]}" />
+      <text x="${(ob[0] + ob[2]) / 2}" y="${-bb[1] + m - 9}">${pw}</text>
+      <path d="M${bb[2] + 6} ${-ob[3]}H${bb[2] + m - 2}M${bb[2] + 6} ${-ob[1]}H${bb[2] + m - 2}M${bb[2] + m - 7} ${-ob[3]}V${-ob[1]}" />
+      <text x="${bb[2] + m - 9}" y="${-(ob[1] + ob[3]) / 2}" transform="rotate(-90 ${bb[2] + m - 9} ${-(ob[1] + ob[3]) / 2})">${ph}</text>
       <path class="dw-axis" d="M0 0h8M0 0v-8"/>
     </g>`;
   return `<svg class="drawing" viewBox="${vb.join(' ')}" role="img" aria-label="Top view of ${part.name}">
@@ -66,8 +67,8 @@ function list() {
       <h1 class="page-title">Practice parts</h1>
       <p class="lede">Real little jobs to program in your own Mastercam. Download the drawing as a DXF, set up the stock and the vise like in the 3D preview, and try to beat the target cycle time.</p>
       <h2 class="section-title">Complete 2D jobs</h2>
-      <p class="muted">Three parts that together use all 12 toolpaths, from a first plate to an aerospace cover.</p>
-      <div class="part-grid big">${jobs.map((p) => card(p, true))}</div>
+      <p class="muted">Whole parts, from a first plate to expert jobs with thin ribs, stepped islands and clamps in the way. Only the 12 2D toolpaths are needed.</p>
+      ${['beginner', 'intermediate', 'advanced', 'expert'].map((lv) => { const js = jobs.filter((p) => p.level === lv); return js.length ? html`<h3 class="part-group"><span class="level level-${lv}">${levels[lv]}</span><span class="muted" style="font:400 var(--t-sm) var(--f-body)">${js.length} part${js.length > 1 ? 's' : ''}</span></h3><div class="part-grid big">${js.map((p) => card(p, true))}</div>` : ''; })}
       <h2 class="section-title">One toolpath at a time</h2>
       <p class="muted">A small part for each toolpath, so you can try its settings on their own.</p>
       ${groups.map((g) => html`<h3 class="part-group" data-group="${g.id}"><span class="group-chip"></span>${nm(g)}</h3>
@@ -89,7 +90,9 @@ export function render(r) {
     const deepest = Math.min(...part.features.filter((f) => f.kind === 'outside' || f.kind === 'channel').map((f) => f.z1), 0);
     const jaw = -part.H + part.fixture.grip;
     return deepest < 0 ? `Vise jaws top at Z${fmt(jaw)}; deepest outside cut Z${fmt(deepest)} → ${fmt(deepest - jaw)} mm clearance.` : `Vise jaws top at Z${fmt(jaw)}.`;
-  })() : 'Through cuts go 0.5–1 mm into the spoilboard.';
+  })() : part.fixture.type === 'clamps'
+    ? `Clamp tops at Z${fmt(part.stock.z - part.H + 10)}: keep every move 5 mm clear (Avoidance region, or a Clearance plane above them). Through cuts go 0.5 mm into the spoilboard.`
+    : 'Through cuts go 0.5–1 mm into the spoilboard.';
   return {
     title: `${part.name} — practice`,
     html: html`

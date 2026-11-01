@@ -18,7 +18,7 @@ export async function mountPart(el, part, opts = {}) {
 
   const mats = {
     part: new T.MeshStandardMaterial({ color: css('--part', el), metalness: 0.45, roughness: 0.42 }),
-    edge: new T.LineBasicMaterial({ color: 0x0b1319, transparent: true, opacity: 0.3 }),
+    edge: new T.LineBasicMaterial({ color: 0x0b1319, transparent: true, opacity: 0.55 }),
     stock: new T.LineBasicMaterial({ color: css('--rapid', el), transparent: true, opacity: 0.7 }),
     stockFill: new T.MeshBasicMaterial({ color: css('--rapid', el), transparent: true, opacity: 0.06, depthWrite: false }),
     vise: new T.MeshStandardMaterial({ color: 0x3e5568, metalness: 0.3, roughness: 0.6 }),
@@ -31,16 +31,29 @@ export async function mountPart(el, part, opts = {}) {
 
   // part
   const partG = new T.Group();
-  for (const s of slabs(part)) {
+  // Edges: a ring (outline or hole) at a slab's top or bottom is a real edge only if the
+  // neighbouring slab doesn't continue the same ring (otherwise walls would show fake layer lines).
+  const sl = slabs(part);
+  const sig = (r) => r.length + ':' + r.reduce((a, [x, y]) => a + x * 3.1 + y * 7.7, 0).toFixed(2);
+  const rings = (s) => new Set(s.pieces.flatMap((pc) => [pc.outer, ...pc.holes]).map(sig));
+  const sets = sl.map(rings);
+  const edgePts = [];
+  const addRing = (r, z) => { for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; edgePts.push(a[0], a[1], z, b[0], b[1], z); } };
+  sl.forEach((s, k) => {
     for (const pc of s.pieces) {
       const shape = new T.Shape(pc.outer.map(([x, y]) => new T.Vector2(x, y)));
       for (const h of pc.holes) shape.holes.push(new T.Path(h.map(([x, y]) => new T.Vector2(x, y))));
       const g = new T.ExtrudeGeometry(shape, { depth: s.zt - s.zb, bevelEnabled: false, curveSegments: 4 });
       g.translate(0, 0, s.zb);
       partG.add(new T.Mesh(g, mats.part));
-      partG.add(new T.LineSegments(new T.EdgesGeometry(g, 28), mats.edge));
+      for (const r of [pc.outer, ...pc.holes]) {
+        if (!(k > 0 && sets[k - 1].has(sig(r)))) addRing(r, s.zt);
+        if (!(k < sl.length - 1 && sets[k + 1].has(sig(r)))) addRing(r, s.zb);
+      }
     }
-  }
+  });
+  const eg = new T.BufferGeometry(); eg.setAttribute('position', new T.Float32BufferAttribute(edgePts, 3));
+  partG.add(new T.LineSegments(eg, mats.edge));
   scene.add(partG);
 
   // stock ghost
@@ -69,6 +82,25 @@ export async function mountPart(el, part, opts = {}) {
     const hex = new T.CylinderGeometry(14, 14, 18, 6); hex.translate(0, -hy - 215, bodyZ - 35);
     fx.add(new T.Mesh(hex, mats.jaw));
     tableZ = bodyZ - 70;
+  } else if (part.fixture.type === 'clamps') {
+    // aluminium sub-plate with a spoilboard, four toe clamps on the stock corners
+    const t = 12;
+    fx.add(box(-hx - 20, hx + 20, -hy - 20, hy + 20, z0 - t, z0, mats.board));
+    fx.add(box(-hx - 70, hx + 70, -hy - 60, hy + 60, z0 - t - 30, z0 - t, mats.vise));
+    const reach = part.fixture.reach || 12;
+    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const cx = sx * hx, cy = sy * hy;
+      // the clamp bar runs diagonally out from the corner: modelled as a short bar along X
+      const xIn = cx - sx * reach, xOut = cx + sx * 46;
+      fx.add(box(Math.min(xIn, xOut), Math.max(xIn, xOut), cy - sy * 9 - 9, cy - sy * 9 + 9, zTop, zTop + 10, mats.jaw));
+      fx.add(box(Math.min(cx + sx * 34, cx + sx * 50), Math.max(cx + sx * 34, cx + sx * 50), cy - sy * 9 - 9, cy - sy * 9 + 9, z0 - t, zTop, mats.vise)); // step block
+      const stud = new T.CylinderGeometry(5, 5, zTop + 22 - (z0 - t), 14); stud.rotateX(Math.PI / 2);
+      stud.translate(cx + sx * 20, cy - sy * 9, (zTop + 22 + z0 - t) / 2);
+      fx.add(new T.Mesh(stud, mats.jaw));
+      const nut = new T.CylinderGeometry(9, 9, 7, 6); nut.rotateX(Math.PI / 2); nut.translate(cx + sx * 20, cy - sy * 9, zTop + 13.5);
+      fx.add(new T.Mesh(nut, mats.jaw));
+    }
+    tableZ = z0 - t - 30;
   } else {
     const t = 18;
     fx.add(box(-hx - 50, hx + 50, -hy - 40, hy + 40, z0 - t, z0, mats.board));

@@ -949,3 +949,4 @@ a.op-chip:hover { text-decoration: underline; }
 @media (max-width: 760px) { .walk { grid-template-columns: 1fr; } .cad-head h1 { font-size: var(--t-2xl); } }
 .cad-shot { max-width: 380px; }
 .cad-shot .shot img { max-height: 300px; object-fit: cover; object-position: top left; }
+.level-expert { background: color-mix(in srgb, var(--g-holes) 16%, transparent); color: var(--g-holes); }
