@@ -46,7 +46,7 @@ export const whatsNew = {
 };
 
 export const roadmap = [
-  { v: '1.x', text: 'Verify every 2025 page against a real install, add real screenshots of each dialog page' },
+  { v: '1.x', text: 'Report-a-mistake button on every parameter; French interface and explanations' },
   { v: '1.x', text: 'Blend Mill, Engrave, Model Chamfer, 2D Swept, FBM Drill' },
   { v: '2.0', text: 'STEP part viewer with hole/pocket recognition and machining tips' },
   { v: '2.x', text: '3D Mill toolpaths (OptiRough, Waterline, Scallop…) and Mastercam 2026 differences' },

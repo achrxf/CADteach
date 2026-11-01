@@ -44,10 +44,10 @@ function feeds() {
             <div class="field wide"><label for="f-mat-q">Material <span class="muted">(${materials.length} in the list)</span></label>
               <input class="input" id="f-mat-q" type="search" placeholder="Filter, e.g. 7075, inconel, 17-4, POM" autocomplete="off" style="margin-bottom:6px">
               <select class="select" id="f-mat" name="mat">${matOpts}</select></div>
-            <div class="field"><label for="f-d">Tool Ø <span data-u="len"></span></label><input class="input" id="f-d" name="d" type="number" step="any" min="0" inputmode="decimal"></div>
+            <div class="field"><label for="f-d">Tool Ø <span data-u="len"></span></label><input class="input" id="f-d" name="d" type="number" step="any" min="0" inputmode="decimal" list="tool-sizes"><datalist id="tool-sizes"></datalist></div>
             <div class="field"><label for="f-z">Flutes</label><input class="input" id="f-z" name="z" type="number" step="1" min="1" inputmode="numeric"></div>
             <div class="field"><label for="f-vc">Surface speed <span data-u="vc"></span></label><input class="input" id="f-vc" name="vc" type="number" step="any" min="0" inputmode="decimal"></div>
-            <div class="field"><label for="f-fz">Chip load fz <span data-u="len"></span></label><input class="input" id="f-fz" name="fz" type="number" step="any" min="0" inputmode="decimal"></div>
+            <div class="field"><label for="f-fz">Catalog chip load fz <span data-u="len"></span></label><input class="input" id="f-fz" name="fz" type="number" step="any" min="0" inputmode="decimal"></div>
             <div class="field"><label for="f-ae">Stepover ae (% Ø)</label><input class="input" id="f-ae" name="ae" type="number" step="any" min="0" max="100" inputmode="decimal"></div>
             <div class="field"><label for="f-ap">Depth ap <span data-u="len"></span></label><input class="input" id="f-ap" name="ap" type="number" step="any" min="0" inputmode="decimal"></div>
             <div class="field wide"><label for="f-max">Machine max RPM</label><input class="input" id="f-max" name="max" type="number" step="100" min="0" inputmode="numeric"></div>
@@ -66,6 +66,9 @@ function feeds() {
         root.querySelectorAll('[data-u=len]').forEach((e) => (e.textContent = s.unit === 'mm' ? '(mm)' : '(in)'));
         root.querySelectorAll('[data-u=vc]').forEach((e) => (e.textContent = s.unit === 'mm' ? '(m/min)' : '(SFM)'));
         root.querySelectorAll('[data-unit]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.unit === s.unit)));
+        root.querySelector('#tool-sizes').innerHTML = (s.unit === 'mm'
+          ? ['3', '4', '6', '8', '10', '12', '16', '20', '25', '32', '50'].map((v) => `<option value="${v}">`)
+          : [['0.125', '1/8"'], ['0.1875', '3/16"'], ['0.25', '1/4"'], ['0.3125', '5/16"'], ['0.375', '3/8"'], ['0.5', '1/2"'], ['0.625', '5/8"'], ['0.75', '3/4"'], ['1', '1"'], ['2', '2" face mill']].map(([v, l]) => `<option value="${v}" label="${l}">`)).join('');
       };
       const calc = () => {
         const metric = s.unit === 'mm';
@@ -86,7 +89,7 @@ function feeds() {
         root.querySelector('#feeds-out').innerHTML = [
           ['Spindle', fmt(rpm, 0), 'RPM', true],
           ['Feed', fmt(feed, metric ? 0 : 1), metric ? 'mm/min' : 'IPM', true],
-          ['Programmed fz', fmt(fzAdj, metric ? 3 : 4), lu],
+          ['fz to program (with thinning)', fmt(fzAdj, metric ? 3 : 4), lu],
           ['Chip thinning', '×' + fmt(factor, 2), ''],
           ['Engagement', fmt(engage, 0), '°'],
           ['Removal rate', fmt(mrr, metric ? 1 : 2), metric ? 'cm³/min' : 'in³/min'],
@@ -98,9 +101,10 @@ function feeds() {
         if (r >= 0.5) notes.push('Stepover is 50% or more: no chip thinning correction. For deep cuts at this width, depth should be modest — or switch to a dynamic toolpath.');
         if (mat) {
           const fzD = suggestedFz(mat, metric ? D : D * 25.4);
-          const vcTxt = metric ? `${mat.vc[0]}–${mat.vc[1]} m/min` : `${Math.round(mat.vc[0] * 3.2808)}–${Math.round(mat.vc[1] * 3.2808)} SFM`;
+          const vcTxt = metric ? `${mat.vc[0]}–${mat.vc[1]} m/min` : `${Math.round((mat.vc[0] * 3.2808) / 10) * 10}–${Math.round((mat.vc[1] * 3.2808) / 10) * 10} SFM`;
           const fzTxt = metric ? `${fmt(fzD, 3)} mm` : `${fmt(fzD / 25.4, 4)} in`;
           notes.push(`<b>${esc(mat.name)}:</b> suggested Vc ${vcTxt}, fz about ${fzTxt} for this diameter. ${esc(mat.note)}`);
+          if ((mat.iso === 'S' || mat.iso === 'M' || mat.iso === 'H') && r <= 0.2) notes.push('<b>Light radial cut:</b> at small stepover (dynamic / HEM) most tool makers allow a higher Vc in this material — often +20–50% over the slotting value. Check the catalog\u2019s HEM table before raising it.');
         }
         root.querySelector('#feeds-notes').innerHTML = notes.map((n) => `<p>${n}</p>`).join('');
         store.set('feeds', s);
@@ -126,7 +130,7 @@ function feeds() {
           const mid = (m.vc[0] + m.vc[1]) / 2;
           const fzD = suggestedFz(m, s.unit === 'mm' ? +s.d : +s.d * 25.4);
           if (s.unit === 'mm') { s.vc = Math.round(mid); s.fz = +fzD.toFixed(3); }
-          else { s.vc = Math.round(mid * 3.2808); s.fz = +(fzD / 25.4).toFixed(4); }
+          else { s.vc = Math.round((mid * 3.2808) / 10) * 10; s.fz = +(fzD / 25.4).toFixed(4); }
           fill();
         }
         calc();
@@ -136,10 +140,13 @@ function feeds() {
         if (!b || b.dataset.unit === s.unit) return;
         const toIn = b.dataset.unit === 'in';
         const L = toIn ? 1 / 25.4 : 25.4;
-        s.d = +(s.d * L).toFixed(toIn ? 4 : 2);
+        const FR = [0.0625, 0.09375, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75, 1, 1.25, 1.5, 2];
+        const MM = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 25, 32, 40, 50];
+        const near = (arr, v) => arr.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
+        s.d = toIn ? near(FR, s.d / 25.4) : near(MM, s.d * 25.4);
         s.fz = +(s.fz * L).toFixed(toIn ? 4 : 3);
         s.ap = +(s.ap * L).toFixed(toIn ? 3 : 1);
-        s.vc = Math.round(toIn ? s.vc * 3.2808 : s.vc / 3.2808);
+        s.vc = toIn ? Math.round((s.vc * 3.2808) / 10) * 10 : Math.round(s.vc / 3.2808 / 5) * 5;
         s.unit = b.dataset.unit;
         fill();
         calc();
@@ -172,9 +179,11 @@ G0 Z50.
 M5
 M9
 G91 G28 Z0.
+(T2 - two deliberate mistakes below, see the warnings)
 T2 M6
 G0 G90 G54 X20. Y20. S2500 M3
-G43 H2 Z50. M8
+G0 Z50.
+G43 H3 Z50. M8
 G99 G83 Z-24. R2. Q6. F250.
 X40.
 X60.
@@ -213,12 +222,13 @@ function explainLine(raw0, st) {
         if (n === 80) st.cycle = null;
         if (n === 41 || n === 42) st.comp = n;
         if (n === 40) st.comp = null;
-        if (n === 43) st.lengthComp = true;
+        if (n === 43) { st.lengthComp = true; const h = toks.find((x) => x.l === 'H'); if (h && st.tool != null && +h.v !== st.tool) warn.push(`G43 H${h.v} but the active tool is T${st.tool} — wrong length offset?`); }
+        if (n === 187) st.g187 = true;
         if (n === 28 && st.abs && !has(91)) warn.push('G28 in absolute mode moves through the given point in work coordinates first. Use G91 G28 Z0 to go straight up.');
       } else {
         if (n === 3 || n === 4) st.spindle = true;
         if (n === 5) st.spindle = false;
-        if (n === 6) { st.lengthComp = false; st.toolChanged = true; }
+        if (n === 6) { st.lengthComp = false; st.toolChanged = true; st.tool = st.nextTool ?? st.tool; }
       }
     } else if (tk.l === 'N') {
       // line number, skip
@@ -235,6 +245,7 @@ function explainLine(raw0, st) {
       if (tk.l === 'F') d = `feed rate (${st.units === 'in' ? 'in/min' : 'mm/min'})`;
       parts.push(`<b>${esc(tk.l + tk.v)}</b> ${esc(d)}`);
       if (tk.l === 'F') st.feed = true;
+      if (tk.l === 'T') st.nextTool = +tk.v;
       if (tk.l === 'T' && !toks.some((x) => x.l === 'M' && +x.v === 6)) parts[parts.length - 1] += ' (pre-selected for the next M6)';
     }
   }
@@ -247,6 +258,7 @@ function explainLine(raw0, st) {
   if ((has(41) || has(42)) && (st.motion === 2 || st.motion === 3)) warn.push('Cutter comp switched on during an arc — most controls need a linear move (G1) to start G41/G42.');
   if (st.toolChanged && moves && toks.some((x) => x.l === 'Z') && !st.lengthComp && !has(43) && !has(28) && !has(53)) warn.push('Z move after a tool change without G43 H — the tool length is not applied.');
   if (has(83) || has(73)) { if (!toks.some((x) => x.l === 'Q')) warn.push('Peck cycle without a Q value.'); }
+  st.g187 = false;
   return { parts, warn, comments };
 }
 

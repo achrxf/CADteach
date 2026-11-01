@@ -98,11 +98,12 @@ export function render(r) {
         </div>
         <div class="op-stage" id="op-stage" aria-label="3D preview of the ${op.name} toolpath">
           <div class="stage-legend"><span><i></i>feed</span><span><i class="rapid"></i>rapid</span></div>
-          <div class="stage-hint">Drag to rotate</div>
+          <div class="stage-hint">${matchMedia('(pointer: coarse)').matches ? 'Two fingers to rotate' : 'Drag to rotate'}</div>
         </div>
       </header>
 
       <nav class="page-tabs" aria-label="Parameter pages">
+        <span class="tabs-op">${nm(op)}</span>
         ${op.pages.map((p) => html`<a href="#/op/${op.id}/${p.id}" ${p.id === page.id ? raw('aria-current="page"') : ''}>${nm(p)}${p.isNew ? ' ●' : ''}</a>`)}
       </nav>
 
@@ -123,7 +124,7 @@ export function render(r) {
         </div>
         ${pagerLinks(op, page)}
       </div>
-      <dialog class="lightbox" aria-label="Screenshot"><form method="dialog"><button class="icon-btn lightbox-close" aria-label="Close">Close</button></form><img alt=""></dialog>
+      <dialog class="lightbox" aria-label="Screenshot"><form method="dialog" class="lightbox-bar"><span>Mastercam 2025 dialog · scroll to see all of it</span><button class="icon-btn lightbox-close">Close</button></form><div class="lightbox-scroll"><img alt=""></div></dialog>
     `,
     mount(root) {
       const cleanups = [];

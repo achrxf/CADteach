@@ -25,7 +25,7 @@ export function render() {
         </div>
         <div class="hero-stage" id="hero-stage" aria-label="3D preview of a contour toolpath around a part">
           <div class="stage-legend"><span><i></i>feed</span><span><i class="rapid"></i>rapid</span></div>
-          <div class="stage-hint">Drag to rotate</div>
+          <div class="stage-hint">${matchMedia('(pointer: coarse)').matches ? 'Two fingers to rotate' : 'Drag to rotate'}</div>
         </div>
       </section>
 

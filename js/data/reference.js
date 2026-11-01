@@ -8,7 +8,8 @@ export const symptoms = [
     fr: 'Broutage sur les parois',
     area: 'Finish',
     causes: [
-      { text: 'Tool sticks out too far — use the shortest holder/tool length possible, or split the wall into depth cuts.', links: [['contour', 'depth-cuts', 'max-rough-step']] },
+      { text: 'Tool sticks out too far — use the shortest holder and tool length possible (set in the Holder page and the tool definition).', links: [] },
+      { text: 'Wall too tall for one finish pass with a long tool — split it into depth cuts.', links: [['contour', 'depth-cuts', 'max-rough-step']] },
       { text: 'Radial engagement too high for the finish pass — lighter finish spacing.', links: [['contour', 'multi-passes', 'finish-passes']] },
       { text: 'Spindle speed in a resonant zone — change RPM ±10–15% and try again.', links: [['contour', 'tool', 'speeds-feeds']] },
       { text: 'Feed too low: the tool rubs. Check chip load with chip thinning.', links: [], tool: 'feeds' },
@@ -68,6 +69,20 @@ export const symptoms = [
       { text: 'Helix radius too small: a center core remains.', links: [['pocket', 'entry-motion', 'helix-radius']] },
       { text: 'Ramp angle steeper than the tool allows.', links: [['pocket', 'entry-motion', 'plunge-angle']] },
       { text: 'Feed plane too low on uneven stock — rapid into the material.', links: [['contour', 'linking', 'feed-plane']] },
+    ],
+  },
+  {
+    id: 'tool-breaks-cut',
+    name: 'Tool breaks in the middle of the cut',
+    fr: 'L\u2019outil casse pendant la coupe',
+    area: 'Tool life',
+    causes: [
+      { text: 'Feed too high for the real chip — check fz with chip thinning, especially after raising the stepover.', links: [], tool: 'feeds' },
+      { text: 'Corner overload: engagement jumps where the tool wraps an inside corner — use a dynamic or high-speed pattern, or clear corners first.', links: [['pocket', 'roughing', 'cutting-method'], ['dynamic-mill', 'corner-pretreatment', 'corners']] },
+      { text: 'Chips are not cleared and get recut — air blast, thru-tool coolant, or lift between levels in deep pockets.', links: [['contour', 'coolant', 'coolant']] },
+      { text: 'Long tool stick-out or weak holding — shorter tool, shrink-fit or hydraulic holder, lighter depth.', links: [['contour', 'depth-cuts', 'max-rough-step']] },
+      { text: 'Rapid into stock because the feed plane or retract is too low on uneven stock.', links: [['contour', 'linking', 'feed-plane']] },
+      { text: 'Full-width slotting with a standard pocket pattern — Zigzag turns and the first pass are full width.', links: [['pocket', 'roughing', 'stepover']] },
     ],
   },
   {

@@ -2,6 +2,23 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.2.1 — 2026-11-01
+
+Fixes from an 8-person tester panel (simulated users: junior programmer, operator, instructor, student, shop owner, sceptic, older machinist, designer):
+
+- Engagement angle drawing now matches Mastercam's Angle field and the calculator (10% = 37°, 25% = 60°): contact only on the leading side, feed along the wall
+- Wear comp explanation: positive D moves the tool away from the part (outside bigger, holes smaller); full radius in D with Wear = offset twice
+- Lead In/Out visual: Tangent and Perpendicular now differ, defaults match Mastercam (100% / 100% / 90°)
+- New Climb/Conventional visual for Dynamic and Pocket (no G41/G42 there)
+- Compensation "typical" no longer contradicts the advice; visual defaults match the text (facing overlaps, compensation type)
+- 3D previews no longer capture page scrolling (wheel passes through; on touch one finger scrolls, two rotate)
+- Screenshot zoom: full-screen on phones at native size with scrolling; Close no longer covers the image
+- Search ranks the toolpath name (e.g. "pocket stepover"), lands on the parameter even while visuals load; toolpath name shown in the sticky tab bar
+- Speeds & feeds: real inch sizes (fractions), SFM rounded, HEM note for titanium/stainless/hardened, clearer fz labels, tidier result grid
+- G-code explainer: warns on G43 H that doesn't match the tool, understands G187 P/E; sample shows two warnings
+- Troubleshooting: new "Tool breaks in the middle of the cut", more causes for corner gouges
+- Finish passes drawn in green everywhere (amber = rapid only); bigger labels in drawings; better grey text contrast
+
 ## 1.2.0 — 2026-11-01
 
 - Sharp, full-resolution Mastercam 2025 dialog screenshots (42 pages) replace the blurry ones

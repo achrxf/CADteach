@@ -47,7 +47,7 @@ const stepover = {
   id: 'stepover',
   name: 'Stepover — Distance / Angle',
   fr: 'Pas latéral — Distance / Angle',
-  what: 'Radial cut of each pass (default 25% of Ø). The Angle field is the engagement angle — change one and the other follows.',
+  what: 'Radial cut of each pass. The Angle field is the engagement angle (25% = 60°, 10% = 37°) — change one and the other follows. The template starts at 25%; at full flute depth most shops go lower, as below.',
   when: 'The key dynamic value. Smaller in harder materials. Raise the feed for chip thinning (Speeds & feeds tool).',
   values: { al: '10–20% Ø', steel: '8–12% Ø', ti: '5–10% Ø' },
   mistakes: ['Small stepover with the normal feed: the chip is too thin, the tool rubs and wears.'],
@@ -90,11 +90,11 @@ const direction = {
   id: 'cutting-method',
   name: 'Cutting method — Climb / Conventional',
   fr: 'Méthode de coupe — En avalant / En opposition',
-  what: 'Every cut is climb (default) or conventional.',
-  when: 'Climb.',
+  what: 'Every cut is climb (default) or conventional. Dynamic toolpaths do not post G41/G42 — this only sets the direction of travel.',
+  when: 'Climb: the chip starts thick and ends thin, for longer tool life and a better wall.',
   typical: 'Climb',
   mistakes: [],
-  viz: 'comp-side',
+  viz: 'climb-conv',
 };
 
 const approach = {

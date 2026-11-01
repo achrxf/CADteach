@@ -107,7 +107,7 @@ function about() {
       <p class="muted" style="font-size:var(--t-sm);margin-top:8px">Source: <a href="${wn.source}" target="_blank" rel="noopener">Mastercam 2025 milling enhancements</a>.</p>
 
       <h2 class="section-title">Checked pages</h2>
-      <p>${done} of ${pages.length} parameter pages marked as checked against a real Mastercam install on this device.</p>
+      <p>All toolpaths were checked by the author. Separately, <b>you</b> have marked ${done} of ${pages.length} pages as checked on your own machine with the button at the bottom of each page.</p>
       <p class="muted" style="font-size:var(--t-sm);max-width:70ch">All 12 toolpaths were checked field by field against Mastercam 2025 (Mill Default MM template); the dialog screenshots come from that install. Explanations are our own words, not copied from the Mastercam help. Field names and defaults can differ slightly between versions — when a page matches your install, mark it as checked. Typical values are starting points for carbide in a rigid setup; the tool maker’s data always wins.</p>
 
       <h2 class="section-title">Versions</h2>

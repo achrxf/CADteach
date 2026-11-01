@@ -77,7 +77,7 @@ specs['comp-type'] = {
     { type: 'seg', key: 'type', label: 'Type', options: [['computer', 'Computer'], ['control', 'Control'], ['wear', 'Wear'], ['rwear', 'Reverse wear'], ['off', 'Off']] },
     { type: 'range', key: 'd', label: 'Value in D', min: -0.1, max: 0.1, step: 0.01, unit: 'mm', show: (s) => s.type === 'wear' || s.type === 'rwear' },
   ],
-  init: { type: 'wear', d: 0 },
+  init: { type: 'computer', d: 0 },
   draw({ type }) {
     const x = 110, y = 34, w = 200, h = 130, R = 22;
     let s = hatch + rc(x, y, w, h, 'v-hatch-fill', 6);
@@ -168,7 +168,7 @@ specs['depth-cuts'] = {
     s += ln(20, bottom, W - 10, bottom, 'v-ink-thin') + tx(24, bottom + 16, 'Depth', 'v-label');
     levels.forEach((lv, i) => {
       const y = top + lv.z * k;
-      s += ln(120, y, 196, y, lv.kind === 'finish' ? 'v-rapid-solid' : 'v-feed');
+      s += ln(120, y, 196, y, lv.kind === 'finish' ? 'v-finish' : 'v-feed');
       s += tx(116, y + 4, fmt(lv.z, 2), 'v-label-num', 'end');
       if (i === levels.length - 1) s += rc(148, y - 70, 44, 70, 'v-tool', 3);
     });
@@ -177,7 +177,7 @@ specs['depth-cuts'] = {
   caption(st) {
     const { n, step, finish } = depthLevels(st);
     let c = `<b>${n} rough step${n === 1 ? '' : 's'} of ${fmt(step, 2)} mm</b>`;
-    if (st.nf) c += ` + <b>${st.nf} finish step${st.nf > 1 ? 's' : ''} of ${fmt(st.fs, 2)} mm</b> (amber)`;
+    if (st.nf) c += ` + <b>${st.nf} finish step${st.nf > 1 ? 's' : ''} of ${fmt(st.fs, 2)} mm</b> (green)`;
     c += `. Mastercam splits the roughing depth evenly, so steps are never bigger than ${fmt(st.max, 2)} mm but are often smaller.`;
     if (finish >= st.total) c = '<b>Finish cuts cover the whole depth.</b> Reduce # finish cuts or finish step.';
     return c;
@@ -279,13 +279,13 @@ specs.lead = {
     { type: 'range', key: 'rad', label: 'Arc radius', min: 0, max: 100, step: 5, unit: '% Ø' },
     { type: 'range', key: 'sweep', label: 'Arc sweep', min: 0, max: 180, step: 5, unit: '°' },
   ],
-  init: { line: 'tan', len: 50, rad: 50, sweep: 90 },
+  init: { line: 'tan', len: 100, rad: 100, sweep: 90 },
   draw({ line, len, rad, sweep }) {
     const k = 6.5; // px per mm, tool Ø10 → 65 px
     const R = (TOOL_D / 2) * k;
     const wallY = 200;
     const pathY = wallY - R; // tool center path (screen)
-    const S = { x: 250, y: pathY };
+    const S = { x: 270, y: pathY };
     const r = (rad / 100) * TOOL_D * k;
     const th = (sweep * Math.PI) / 180;
     // math coords (y up) relative to S; center at (0, r)
@@ -293,8 +293,10 @@ specs.lead = {
     const a0 = -Math.PI / 2 - th;
     const A = r > 0 && th > 0 ? P(a0) : S;
     let dir; // direction of the line, arriving at A
-    if (line === 'tan') dir = r > 0 && th > 0 ? { x: -Math.sin(a0), y: -Math.cos(a0) } : { x: 1, y: 0 };
-    else dir = { x: 0, y: 1 }; // perpendicular: coming straight toward the wall
+    // Tangent: the line continues the arc's direction. Perpendicular: the line is at 90° to it.
+    const tdir = r > 0 && th > 0 ? { x: -Math.sin(a0), y: -Math.cos(a0) } : { x: 1, y: 0 };
+    if (line === 'tan') dir = tdir;
+    else dir = { x: tdir.y, y: -tdir.x };
     const L = (len / 100) * TOOL_D * k;
     const L0 = { x: A.x - dir.x * L, y: A.y - dir.y * L };
     let s = hatch + rc(0, wallY, W, H - wallY, 'v-hatch-fill');
@@ -303,8 +305,8 @@ specs.lead = {
     if (L > 0) s += ln(L0.x, L0.y, A.x, A.y, 'v-feed');
     if (r > 0 && th > 0) s += pa(`M${A.x},${A.y} A${r},${r} 0 ${sweep > 180 ? 1 : 0} 1 ${S.x},${S.y}`, 'v-feed');
     s += ln(S.x, S.y, S.x + 90, S.y, 'v-feed') + arrowHead(S.x + 92, S.y, 0);
-    s += ci(S.x, S.y, R, 'v-tool-ghost') + ci(S.x, S.y, 2.5, 'v-ink-fill');
-    s += ci(L0.x, L0.y, 3, 'v-rapid-fill') + tx(L0.x - 6, L0.y - 6, 'start', 'v-label', 'end');
+    s += ci(L0.x, L0.y, R, 'v-tool-ghost') + ci(S.x, S.y, 2.5, 'v-ink-fill');
+    s += ci(L0.x, L0.y, 3, 'v-rapid-fill') + tx(L0.x, L0.y - R - 6, 'tool starts here', 'v-label', 'middle');
     s += tx(S.x + 4, S.y - 8, 'touches wall', 'v-label');
     return s;
   },
@@ -313,7 +315,7 @@ specs.lead = {
     if (rad > 0 && sweep > 0) parts.push(`Arc R${fmt((rad / 100) * TOOL_D, 1)} mm over ${sweep}° rolls the tool onto the wall with no sudden hit.`);
     else parts.push('<b>No arc:</b> the tool meets the wall abruptly and usually leaves a mark.');
     if (len === 0) parts.push('<b>No line:</b> with Control or Wear comp many controls can’t start G41/G42 and alarm.');
-    else if ((len / 100) * TOOL_D < TOOL_D / 2) parts.push('Line is shorter than the tool radius — too short to start G41/G42 on most controls.');
+    else if ((len / 100) * TOOL_D <= TOOL_D / 2) parts.push('Line is not longer than the tool radius — too short to start G41/G42 on most controls.');
     else parts.push(`${line === 'tan' ? 'Tangent' : 'Perpendicular'} line ${fmt((len / 100) * TOOL_D, 1)} mm gives the control room to switch on cutter comp.`);
     return parts.join(' ') + ` Tool Ø${TOOL_D}.`;
   },
@@ -343,7 +345,7 @@ specs['multi-passes'] = {
     for (let i = 0; i < nfp; i++) { o -= sf; offs.push({ o, kind: 'finish' }); }
     offs.forEach((p, i) => {
       const x = wallX - p.o * k - R;
-      s += ln(x, 20, x, H - 20, p.kind === 'rough' ? 'v-feed' : 'v-rapid-solid');
+      s += ln(x, 20, x, H - 20, p.kind === 'rough' ? 'v-feed' : 'v-finish');
       s += tx(x, 14, `${i + 1}`, 'v-label-num', 'middle');
     });
     if (offs.length) s += ci(wallX - offs[0].o * k - R, H / 2, R, 'v-tool-ghost');
@@ -352,7 +354,7 @@ specs['multi-passes'] = {
   },
   caption({ nr, sr, nfp, sf }) {
     const total = nr * sr + nfp * sf;
-    let c = `Removes <b>${fmt(total, 2)} mm</b> of wall stock: ${nr} rough pass${nr === 1 ? '' : 'es'} (blue) of ${fmt(sr, 2)} mm, ${nfp} finish pass${nfp === 1 ? '' : 'es'} (amber) of ${fmt(sf, 2)} mm.`;
+    let c = `Removes <b>${fmt(total, 2)} mm</b> of wall stock: ${nr} rough pass${nr === 1 ? '' : 'es'} (blue) of ${fmt(sr, 2)} mm, ${nfp} finish pass${nfp === 1 ? '' : 'es'} (green) of ${fmt(sf, 2)} mm.`;
     if (sr > TOOL_D / 2 && nr) c += ' <b>Rough spacing is more than the tool radius</b> — heavy engagement on every pass.';
     if (sf < 0.05 && nfp) c += ' <b>Finish spacing is so small the tool will rub.</b>';
     return c + ` Tool Ø${TOOL_D}.`;
@@ -456,34 +458,37 @@ specs.stepover = {
 
 // ---------------------------------------------------------------------------
 specs.engagement = {
-  title: 'Engagement and chip thinning',
+  title: 'Engagement angle and chip thinning (top view)',
   controls: [
     { type: 'range', key: 'ae', label: 'Stepover (ae)', min: 3, max: 60, step: 1, unit: '% Ø' },
     { type: 'range', key: 'fz', label: 'Catalog fz', min: 0.02, max: 0.15, step: 0.005, unit: 'mm' },
   ],
   init: { ae: 10, fz: 0.05 },
   draw({ ae }) {
-    const cx = 200, cy = 125, R = 85;
+    // Side milling: the tool travels DOWN along the wall (on its left), material on the right.
+    const cx = 190, cy = 120, R = 85;
     const aeP = (ae / 100) * 2 * R;
-    const wallX = cx + R - aeP; // material to the right of wallX
-    let s = hatch + rc(wallX, 0, W - wallX, H, 'v-hatch-fill');
+    const wallX = cx + R - aeP;
+    let s = hatch + rc(wallX, cy, W - wallX, H - cy, 'v-hatch-fill') + rc(wallX, 0, W - wallX, cy, 'v-air');
+    s += ln(wallX, 0, wallX, cy, 'v-chain') + tx(W - 8, 20, 'already cut', 'v-label', 'end') + tx(W - 8, H - 10, 'material', 'v-label-strong', 'end');
     s += ci(cx, cy, R, 'v-tool');
-    // engagement arc: points of the circle with x >= wallX
+    // contact arc: from the point facing the material (angle 0) toward the leading side (downward, +y) until the wall line
     const a = Math.acos(Math.max(-1, Math.min(1, (wallX - cx) / R)));
-    const p1 = [cx + R * Math.cos(-a), cy + R * Math.sin(-a)], p2 = [cx + R * Math.cos(a), cy + R * Math.sin(a)];
-    s += pa(`M${p1[0]},${p1[1]} A${R},${R} 0 ${a > Math.PI / 2 ? 1 : 0} 1 ${p2[0]},${p2[1]}`, 'v-engage');
+    const p1 = [cx + R, cy], p2 = [cx + R * Math.cos(a), cy + R * Math.sin(a)];
+    s += pa(`M${p1[0]},${p1[1]} A${R},${R} 0 ${a > Math.PI ? 1 : 0} 1 ${p2[0]},${p2[1]}`, 'v-engage');
     s += ln(cx, cy, p1[0], p1[1], 'v-ink-thin') + ln(cx, cy, p2[0], p2[1], 'v-ink-thin');
-    s += ln(wallX, 12, cx + R, 12, 'v-ink') + tx((wallX + cx + R) / 2, 8, 'ae', 'v-label', 'middle');
-    s += tx(cx, cy + 4, `${fmt((2 * a * 180) / Math.PI, 0)}°`, 'v-label-strong', 'middle');
-    s += ln(cx - 30, cy + R + 14, cx + 10, cy + R + 14, 'v-feed') + arrowHead(cx + 14, cy + R + 14, 0);
-    s += tx(cx - 34, cy + R + 18, 'feed', 'v-label', 'end');
+    s += tx(cx + 18, cy + 30, `${fmt((a * 180) / Math.PI, 0)}°`, 'v-label-strong');
+    s += ln(wallX, H - 30, cx + R, H - 30, 'v-ink') + tx((wallX + cx + R) / 2, H - 36, 'ae', 'v-label', 'middle');
+    s += ln(cx - R - 22, cy - 30, cx - R - 22, cy + 30, 'v-feed') + arrowHead(cx - R - 22, cy + 34, Math.PI / 2);
+    s += tx(cx - R - 28, cy, 'feed', 'v-label', 'end');
     return s;
   },
   caption({ ae, fz }) {
     const r = ae / 100;
-    const factor = r >= 0.5 ? 1 : 1 / Math.sqrt(1 - Math.pow(1 - 2 * r, 2));
-    const adj = fz * factor;
-    return `At ${ae}% stepover the real chip is thinner than fz. To keep a <b>${fmt(fz, 3)} mm</b> chip, program <b>fz ${fmt(adj, 3)} mm</b> (×${fmt(factor, 2)}). Without this correction a dynamic path rubs and the tool wears fast.`;
+    const ang = (Math.acos(1 - 2 * Math.min(r, 1)) * 180) / Math.PI;
+    if (r >= 0.5) return `The engagement angle is the arc of the tool that touches material: <b>${fmt(ang, 0)}°</b> at ${ae}% stepover. At 50% or more there is no chip thinning — program the catalog fz (${fmt(fz, 3)} mm).`;
+    const factor = 1 / Math.sqrt(1 - Math.pow(1 - 2 * r, 2));
+    return `The engagement angle is the arc of the tool that touches material (amber): <b>${fmt(ang, 0)}°</b> at ${ae}% stepover. With so little contact the real chip is thinner than fz, so to keep a <b>${fmt(fz, 3)} mm</b> chip you program <b>${fmt(fz * factor, 3)} mm</b> (×${fmt(factor, 2)}). Without this correction a dynamic path rubs and the tool wears fast.`;
   },
 };
 
@@ -540,9 +545,9 @@ specs.facing = {
     { type: 'seg', key: 'style', label: 'Style', options: [['zig', 'Zigzag'], ['one', 'One way']] },
     { type: 'range', key: 'so', label: 'Max stepover', min: 30, max: 100, step: 5, unit: '% Ø' },
     { type: 'range', key: 'across', label: 'Across overlap', min: 0, max: 60, step: 5, unit: '% Ø' },
-    { type: 'range', key: 'along', label: 'Along overlap', min: 0, max: 80, step: 5, unit: '% Ø' },
+    { type: 'range', key: 'along', label: 'Along overlap', min: 0, max: 150, step: 5, unit: '% Ø' },
   ],
-  init: { style: 'one', so: 70, across: 20, along: 60 },
+  init: { style: 'one', so: 75, across: 50, along: 110 },
   draw({ style, so, across, along }) {
     const D = 60; // face mill Ø50 shown at 60px
     const x = 110, y = 70, w = 200, h = 120;

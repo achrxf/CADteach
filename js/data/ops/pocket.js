@@ -36,10 +36,10 @@ export default {
           name: 'Machining direction — Climb / Conventional',
           fr: 'Sens d’usinage — En avalant / En opposition',
           what: 'Direction the tool travels around the walls and the pattern.',
-          when: 'Climb on CNC.',
+          when: 'Climb on CNC: the chip starts thick and ends thin.',
           typical: 'Climb',
           mistakes: [],
-          viz: 'comp-side',
+          viz: 'climb-conv',
         },
         {
           id: 'additional-finish',

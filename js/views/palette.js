@@ -36,17 +36,23 @@ export function openSearch(initial = '') {
     if (!results.length) { list.innerHTML = `<li class="empty">${esc(t('noResults'))}</li>`; return; }
     sel = Math.min(sel, results.length - 1);
     list.innerHTML = results
-      .map((r, i) => `<li role="option" aria-selected="${i === sel}" id="pal-${i}"><a href="${esc(r.href)}"><span class="kind">${esc(r.kind)}</span><br><strong>${highlight(r.title, q, esc)}</strong>${r.alt ? ` <span class="fr">${highlight(r.alt, q, esc)}</span>` : ''}${r.snip ? `<span class="snip">${esc(r.snip)}</span>` : ''}</a></li>`)
+      .map((r, i) => `<li role="option" aria-selected="${i === sel}" id="pal-${i}"><a href="${esc(r.href)}"><span class="kind">${esc(r.kind)}</span><br><strong>${highlight(r.title, q, esc)}</strong>${r.snip ? `<span class="snip">${esc(r.snip)}</span>` : ''}</a></li>`)
       .join('');
     input.setAttribute('aria-activedescendant', 'pal-' + sel);
   };
-  const close = () => {
+  const close = (restore = true) => {
     back.remove();
     open = false;
     document.removeEventListener('keydown', onKey, true);
-    prevFocus?.focus?.({ preventScroll: true });
+    if (restore) prevFocus?.focus?.({ preventScroll: true });
+    else prevFocus?.blur?.();
   };
-  const go = (href) => { close(); location.hash = href.replace(/^#/, ''); };
+  const go = (href) => {
+    close(false);
+    const h = href.replace(/^#/, '');
+    if (location.hash.replace(/^#/, '') === h) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    else location.hash = h;
+  };
   const onKey = (e) => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     else if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); sel = (sel + 1) % results.length; draw(); list.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' }); }

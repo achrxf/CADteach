@@ -284,7 +284,7 @@ export async function mountPreview(el, kind, { autoRotate = true } = {}) {
   const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   el.append(renderer.domElement);
-  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none';
+  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y;user-select:none;-webkit-user-select:none';
 
   const scene = new T.Scene();
   const camera = new T.PerspectiveCamera(32, 1, 1, 2000);
@@ -294,6 +294,11 @@ export async function mountPreview(el, kind, { autoRotate = true } = {}) {
   controls.target.set(cx, cy, 8);
   controls.enableDamping = true;
   controls.enablePan = false;
+  // Never trap page scrolling: no wheel zoom, and on touch one finger scrolls the page,
+  // two fingers rotate/zoom the model.
+  controls.enableZoom = false;
+  if (matchMedia('(pointer: coarse)').matches) controls.touches = { ONE: null, TWO: T.TOUCH.DOLLY_ROTATE };
+  renderer.domElement.style.touchAction = 'pan-y'; // OrbitControls sets 'none', which would block page scrolling
   controls.minDistance = 120;
   controls.maxDistance = 520;
   controls.autoRotate = autoRotate && !reduceMotion();

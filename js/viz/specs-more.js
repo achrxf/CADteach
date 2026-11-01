@@ -50,7 +50,7 @@ export function addSpecs(specs, h) {
         const pts = [];
         for (let i = 0; i < laps; i++) pts.push([x0, top + ((bot - top) * i) / laps], [x1, top + ((bot - top) * (i + 1)) / laps]);
         for (let i = 0; i < laps; i++) s += ln(pts[i * 2][0], pts[i * 2][1], pts[i * 2 + 1][0], pts[i * 2 + 1][1], 'v-feed');
-        s += ln(x0, bot - 1, x1, bot - 1, 'v-rapid-solid');
+        s += ln(x0, bot - 1, x1, bot - 1, 'v-finish');
         s += tx(x1, top - 8, 'each diagonal = one lap around the chain', 'v-label', 'end');
       } else if (t === 'osc') {
         const pts = [];
@@ -64,7 +64,7 @@ export function addSpecs(specs, h) {
       return {
         '2d': '<b>2D:</b> the tool follows the chain at each depth level. The normal choice for walls and profiles.',
         chamfer: '<b>2D chamfer:</b> a chamfer mill cuts the edge (amber). Bottom offset pushes the tip below the chamfer so the flank does the cutting, not the weak tip.',
-        ramp: '<b>Ramp:</b> the tool descends continuously around the chain — no step marks between levels. The amber line is the final flat pass that cleans the ramp.',
+        ramp: '<b>Ramp:</b> the tool descends continuously around the chain — no step marks between levels. The green line is the final flat pass that cleans the ramp.',
         remach: '<b>Remachining:</b> only cuts the material a bigger previous tool could not reach (amber corner).',
         osc: '<b>Oscillate:</b> the tool moves up and down while it travels, spreading wear along the flute instead of one spot. Used for long deburr and chamfer cuts.',
       }[t];
@@ -212,7 +212,7 @@ export function addSpecs(specs, h) {
     title: 'Dynamic motion (top view)',
     controls: [
       { type: 'range', key: 'so', label: 'Stepover', min: 5, max: 40, step: 1, unit: '% Ø' },
-      { type: 'range', key: 'rad', label: 'Min toolpath radius', min: 0, max: 50, step: 5, unit: '% Ø' },
+      { type: 'range', key: 'rad', label: 'Loop radius', min: 0, max: 50, step: 5, unit: '% Ø' },
     ],
     init: { so: 15, rad: 10 },
     draw({ so, rad }) {
@@ -237,13 +237,13 @@ export function addSpecs(specs, h) {
       s += ci(tcx, cy - r, R, 'v-tool-ghost') + ci(tcx, cy - r, 2.5, 'v-ink-fill');
       s += ln(tcx, cy - r - R - 6, tcx + adv, cy - r - R - 6, 'v-ink');
       s += tx(tcx + adv + 6, cy - r - R - 2, `stepover ${so}%`, 'v-label');
-      s += tx(W - 12, H - 10, 'blue = cutting   dashed = back feed with micro lift', 'v-label', 'end');
+      s += tx(W - 12, H - 10, 'blue = cutting   dashed = return move', 'v-label', 'end');
       return s;
     },
     caption({ so, rad }) {
-      let c = `Each loop takes a <b>${so}%</b> bite (blue), then returns through air (dashed) at the back feed rate, lifted by the micro lift so it does not rub the floor.`;
+      let c = `Each loop takes a <b>${so}%</b> bite (blue), then comes back through air (dashed). In Dynamic toolpaths that return move is lifted by Micro lift and runs at the Back feed rate.`;
       if (rad === 0) c += ' <b>Radius 0:</b> sharp turns — the machine slows down at every loop.';
-      else c += ` Minimum toolpath radius ${rad}% keeps the loops round so the machine holds the feed.`;
+      else c += ' Bigger loops (Minimum toolpath radius in Dynamic) keep the motion round so the machine holds the feed.';
       return c;
     },
   };
@@ -403,7 +403,7 @@ export function addSpecs(specs, h) {
         s += rc(x0, top, x1 - x0, bot - top, 'v-sweep');
         s += tx((x0 + x1) / 2, (top + bot) / 2, 'one full-height pass', 'v-label-strong', 'middle');
       } else {
-        [1, 2, 3].forEach((i) => { const y = top + ((bot - top) * i) / 3; s += ln(x0, y, x1, y, 'v-rapid-solid'); });
+        [1, 2, 3].forEach((i) => { const y = top + ((bot - top) * i) / 3; s += ln(x0, y, x1, y, 'v-finish'); });
         s += tx((x0 + x1) / 2, top + 24, 'a line at every level', 'v-label-strong', 'middle');
       }
       return s;
@@ -411,7 +411,7 @@ export function addSpecs(specs, h) {
     caption({ m }) {
       return m === 'final'
         ? '<b>Final depth:</b> the wall is finished once, full height, with the whole flute. One clean surface.'
-        : '<b>All depths:</b> the wall is finished at every depth cut. Needed for tall walls and short tools, but each level leaves a fine line (amber).';
+        : '<b>All depths:</b> the wall is finished at every depth cut. Needed for tall walls and short tools, but each level leaves a fine line (green).';
     },
   };
 
@@ -483,6 +483,39 @@ export function addSpecs(specs, h) {
     },
   };
 
+
+  // -------------------------------------------------------------------------
+  specs['climb-conv'] = {
+    title: 'Climb or conventional (top view, spindle M03)',
+    controls: [{ type: 'seg', key: 'm', label: 'Direction', options: [['climb', 'Climb'], ['conv', 'Conventional']] }],
+    init: { m: 'climb' },
+    draw({ m }) {
+      const cx = 200, cy = 125, R = 60, climb = m === 'climb';
+      const wallY = climb ? cy - R + 18 : cy + R - 18; // material above for climb, below for conventional
+      let s = hatch;
+      s += climb ? rc(0, 0, W, wallY, 'v-hatch-fill') : rc(0, wallY, W, H - wallY, 'v-hatch-fill');
+      s += tx(12, climb ? 20 : H - 10, 'material', 'v-label-strong');
+      s += ci(cx, cy, R, 'v-tool');
+      // spindle CW arrow
+      const r2 = R - 14;
+      s += pa(`M${cx + r2 * Math.cos(-2.4)},${cy + r2 * Math.sin(-2.4)} A${r2},${r2} 0 1 1 ${cx + r2 * Math.cos(2.0)},${cy + r2 * Math.sin(2.0)}`, 'v-ink-thin');
+      s += arrowHead(cx + r2 * Math.cos(2.0), cy + r2 * Math.sin(2.0), 2.0 + Math.PI / 2, 'v-ink-fill', 6);
+      // feed arrow (always to the right)
+      s += ln(cx - 30, cy, cx + 24, cy, 'v-feed') + arrowHead(cx + 28, cy, 0);
+      s += tx(cx, cy + 16, 'feed', 'v-label', 'middle');
+      // chip wedge on the material side
+      const y0 = wallY, sgn = climb ? -1 : 1;
+      s += pa(climb ? `M${cx + 52},${y0} L${cx - 10},${y0 - 3} Q${cx - 22},${y0 + 6} ${cx - 14},${y0 + 14} Z` : `M${cx - 52},${y0} L${cx + 10},${y0 + 3} Q${cx + 22},${y0 - 6} ${cx + 14},${y0 - 14} Z`, 'v-stock');
+      s += tx(W - 12, climb ? 20 : H - 10, climb ? 'chip starts thick, ends thin' : 'chip starts thin, ends thick', 'v-label', 'end');
+      return s;
+    },
+    caption({ m }) {
+      return m === 'climb'
+        ? '<b>Climb:</b> each tooth enters the material at full chip thickness and leaves thin. Less rubbing, less heat, better wall finish and tool life — the normal choice on CNC machines.'
+        : '<b>Conventional:</b> each tooth starts with a zero-thickness chip and rubs before it bites, then leaves thick. More heat and wear; used on worn machines with backlash or on hard scale.';
+    },
+  };
+
   // Fixes to existing visuals ------------------------------------------------
   specs['depth-cuts'].draw = function (st) {
     const finish = Math.min(st.nf * st.fs, st.total);
@@ -495,10 +528,11 @@ export function addSpecs(specs, h) {
     const top = 40, bot = 210, k = (bot - top) / st.total, px0 = 120, px1 = 300;
     let s = hatch + view('Section through a pocket');
     s += rc(20, top, px0 - 20, H - top, 'v-hatch-fill') + rc(px1, top, W - px1, H - top, 'v-hatch-fill') + rc(px0, bot, px1 - px0, H - bot, 'v-hatch-fill');
+    let lastY = -99;
     levels.forEach((lv, i) => {
       const y = top + lv.z * k;
-      s += ln(px0 + 4, y, px1 - 4, y, lv.f ? 'v-rapid-solid' : 'v-feed');
-      s += tx(px1 + 6, y + 4, fmt(lv.z, 2), 'v-label-num');
+      s += ln(px0 + 4, y, px1 - 4, y, lv.f ? 'v-finish' : 'v-feed');
+      if (y - lastY >= 13 || i === levels.length - 1) { s += tx(px1 + 6, Math.max(y + 4, lastY + 13), fmt(lv.z, 2), 'v-label-num'); lastY = Math.max(y, lastY + 9); }
     });
     const last = levels[levels.length - 1];
     if (last) s += rc(px0 + 8, top + last.z * k - 90, 40, 90, 'v-tool', 3);

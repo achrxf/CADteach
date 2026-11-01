@@ -33,6 +33,7 @@ function build() {
     { kind: 'Tool', title: 'G-code explainer', alt: 'Lecteur de code G', text: 'fanuc haas program explain nc', href: '#/tools/gcode', w: 2 },
   );
   for (const it of items) {
+    it._k = norm(it.kind);
     it._t = norm(it.title);
     it._a = norm(it.alt);
     it._x = norm(it.text);
@@ -56,6 +57,7 @@ export function search(q, limit = 30) {
         else if (new RegExp('\\b' + tk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(field)) s = Math.max(s, wt * 1.5);
         else if (field.includes(tk)) s = Math.max(s, wt);
       }
+      if (!s && new RegExp('\\b' + tk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(it._k)) s = 6;
       if (!s && it._x.includes(tk)) s = 2;
       if (!s) { ok = false; break; }
       score += s;

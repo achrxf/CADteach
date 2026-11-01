@@ -9,7 +9,7 @@ import * as fix from './views/fix.js';
 import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -46,6 +46,7 @@ function render() {
   // Moving between params of the same page: just scroll, don't re-render.
   if (samePage && r.parts[3]) { focusParam(r.parts[3]); return; }
   cleanup();
+  document.querySelectorAll('.toast').forEach((t) => t.remove());
   const out = view.render(r);
   content.innerHTML = String(out.html);
   document.title = out.title ? `${out.title} — CADteach` : 'CADteach — Mastercam explained';
@@ -66,9 +67,17 @@ function render() {
 let lastPage = null;
 let prevOp = null;
 
-function focusParam(id) {
+function focusParam(id, again = true) {
   const el = document.getElementById('p-' + id);
   if (!el) return;
+  if (again) {
+    // Visuals above mount lazily and change the page height: settle on the parameter again.
+    let moved = false;
+    const stop = () => { moved = true; };
+    addEventListener('wheel', stop, { once: true, passive: true });
+    addEventListener('touchstart', stop, { once: true, passive: true });
+    [450, 1100].forEach((ms) => setTimeout(() => { if (!moved) el.scrollIntoView({ block: 'start' }); }, ms));
+  }
   el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   el.classList.remove('flash');
   void el.offsetWidth;
