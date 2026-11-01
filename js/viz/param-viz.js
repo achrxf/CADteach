@@ -6,6 +6,7 @@
 
 import { esc, fmt } from '../util.js';
 import { addSpecs } from './specs-more.js';
+import { addCadSpecs } from './specs-cad.js';
 
 const W = 420;
 const H = 250;
@@ -846,6 +847,7 @@ specs['break-through'] = {
 
 // ---------------------------------------------------------------------------
 addSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch, fmt, TOOL_D });
+addCadSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead });
 
 export const vizTitles = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
 export const hasViz = (k) => !!specs[k];
@@ -870,7 +872,8 @@ export function mountViz(kind, el) {
   const update = () => {
     stop();
     svg.innerHTML = spec.draw.call(spec, state);
-    cap.innerHTML = spec.caption.call(spec, state);
+    cap.innerHTML = spec.caption ? spec.caption.call(spec, state) : '';
+    cap.hidden = !spec.caption;
     for (const c of spec.controls) {
       const row = el.querySelector(`.row[data-key="${c.key}"]`);
       if (c.show) row.hidden = !c.show(state);

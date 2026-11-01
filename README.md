@@ -4,7 +4,13 @@ Mastercam explained parameter by parameter — for programmers and machinists.
 
 **v1.2 covers Mastercam 2025, 2D mill toolpaths.** For every toolpath you get the dialog pages as Mastercam shows them, and for every parameter: what it does, when to change it, typical starting values in aluminium, steel and titanium, the mistakes that scrap parts, and an interactive visual where one helps.
 
-## What's in v1.0
+## What's in v1.4
+
+- **Practice parts** (`#/practice`): 12 single-toolpath parts and 3 complete 2D jobs, each with a 3D setup preview (vise or vacuum table), job card, target cycle time, DXF/STL/SVG downloads (`parts/`, built by `node scripts/build-parts.mjs`)
+- **Design (CAD)** (`#/cad`): every Mastercam 2025 ribbon tab, 107 functions, panel screenshots (`img/mc2025/cad/`) and 18 CAD visuals (`js/viz/specs-cad.js`)
+- **Machine-screen look** with a live DRO, quizzes per toolpath (`#/quiz`), progress on tiles
+
+## What was in v1.0
 
 - **12 toolpaths:** Facing, Contour, Pocket, Slot Mill, Dynamic Mill, Dynamic Contour, Area Mill, Peel Mill, Drill, Circle Mill, Helix Bore, Thread Mill
 - **33 interactive visuals**, shown next to each parameter, plus real Mastercam 2025 dialog screenshots (`img/mc2025/`). The first 19: compensation side and type, stock to leave, depth cuts, the five linking heights (animated), lead in/out, multi passes, tabs, stepover, engagement and chip thinning, roll around corners, facing overlaps, drill cycles, helix entry, thread milling direction, drill tip comp, chamfer tip offset, ramping, break through

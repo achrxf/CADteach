@@ -1,6 +1,8 @@
 // Client-side search over operations, pages, parameters, problems, glossary and G-codes.
 import { operations } from './data/index.js';
 import { symptoms, glossary, gcodes } from './data/reference.js';
+import { cadTabs } from './data/cad.js';
+import { parts } from './data/practice.js';
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
@@ -20,6 +22,12 @@ function build() {
       }
     }
   }
+  for (const tab of cadTabs) {
+    items.push({ kind: 'Design (CAD)', title: tab.name + (tab.guide ? '' : ' tab'), alt: '', text: tab.intro, href: `#/cad/${tab.id}`, w: 2 });
+    for (const g of tab.groups) for (const c of g.cmds)
+      items.push({ kind: `${tab.name} › ${g.name}`, title: c.name, alt: '', text: [c.what, c.when, c.tip, ...(c.mistakes || [])].join(' '), snip: c.what, href: `#/cad/${tab.id}/${c.id}`, w: c.key ? 2 : 1.5 });
+  }
+  for (const p of parts) items.push({ kind: 'Practice part', title: p.name, alt: '', text: p.brief.story + ' ' + p.ops.join(' '), snip: p.brief.story, href: `#/practice/${p.id}`, w: 1.8 });
   for (const s of symptoms) items.push({ kind: 'Problem', title: s.name, alt: s.fr, text: s.causes.map((c) => c.text).join(' '), snip: s.causes[0].text, href: `#/fix/${s.id}`, w: 2.5 });
   for (const g of glossary) items.push({ kind: 'Glossary', title: g.en, alt: g.fr, text: g.def, snip: g.def, href: `#/glossary#${encodeURIComponent(g.en)}`, w: 1.5 });
   const seen = new Set();

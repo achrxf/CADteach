@@ -2,6 +2,21 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.4.0 — 2026-11-01
+
+Practice parts and the CAD side of Mastercam.
+
+- Practice parts: 12 small parts (one per toolpath) and 3 complete 2D jobs (Bracket plate, Manifold block, Housing cover) that use all 12 toolpaths
+  - each with a job card: machine, material, stock, workholding, tolerances, tools in the magazine, quantity and a target cycle time
+  - a 3D preview of the part in its vise or on a vacuum table, with the stock as a ghost and the work zero shown
+  - downloads: DXF (opens in Mastercam, one level per feature with its depth), STL of the part, drawing as SVG
+  - a suggested plan (hidden until you want it) linked to the toolpath pages, checks before posting, and a box to log your own cycle time against the target
+- Design (CAD): every ribbon tab of Mastercam 2025 (Wireframe, Transform, Solids, Model Prep, Surfaces, Mesh, Drafting, Home, View, Machine) plus a "Start here" page on planes, levels, chaining and snaps
+  - 107 functions, with real ribbon and function-panel screenshots from Mastercam 2025
+  - 18 new interactive visuals: line, arc and circle methods, rectangular shapes, polygon flat/corner, bolt circle, trim, fillet, chamfer, offset, translate/rotate/mirror/scale, array, planes, chaining, solid extrude, push-pull, dimensions, surfaces
+  - "Draw your first part": the Bracket plate drawn from nothing in 8 steps
+- Search covers CAD functions and practice parts
+
 ## 1.3.0 — 2026-11-01
 
 More fun to walk into.

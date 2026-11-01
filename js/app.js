@@ -10,8 +10,10 @@ import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
 import * as quiz from './views/quiz.js';
 import * as practice from './views/practice.js';
+import * as cad from './views/cad.js';
+import { cadTabs } from './data/cad.js';
 
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.4.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -32,7 +34,7 @@ function parse() {
 }
 
 const routes = {
-  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz, practice,
+  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz, practice, cad,
 };
 
 let cleanup = () => {};
@@ -159,11 +161,15 @@ function renderNav(r) {
           ${top === 'op' && opId === o.id ? html`<div class="sub">${o.pages.map((p, i) => html`<a href="#/op/${o.id}/${p.id}" ${cur((pageId || o.pages[defaultPageIndex(o)].id) === p.id)}>${nm(p)}</a>`)}</div>` : ''}
         `)}
       </div>`,
-    )}`);
+    )}
+    <div class="nav-section" data-group="dynamic"><div class="nav-heading">Design (CAD)</div>
+      <a href="#/cad" ${cur(top === 'cad' && !opId)}><span class="op-icon">${raw(ui.part)}</span>Overview</a>
+      ${cadTabs.map((t) => html`<a href="#/cad/${t.id}" ${cur(top === 'cad' && opId === t.id)}><span class="op-icon">${raw(ui.chev)}</span>${t.name}</a>`)}
+    </div>`);
   nav.querySelector('[aria-current="page"]:not(.nav-section:first-child a)')?.scrollIntoView({ block: 'nearest' });
   document.querySelectorAll('.tabbar [data-tab]').forEach((a) => {
     const tab = a.dataset.tab;
-    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' || top === 'practice' : top === tab;
+    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' || top === 'practice' || top === 'cad' : top === tab;
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }

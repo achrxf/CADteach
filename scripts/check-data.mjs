@@ -38,5 +38,30 @@ const resolve = (o, pg, pa) => {
 };
 for (const s of symptoms) for (const c of s.causes) for (const l of c.links) if (!resolve(...l)) err(`symptom ${s.id}: bad link ${l.join('/')}`);
 for (const i of whatsNew['2025'].items) if (i.op && !resolve(i.op, i.page)) err(`whatsNew: bad link ${i.op}/${i.page}`);
+// Practice parts and CAD pages
+import { parts } from '../js/data/practice.js';
+import { cadTabs, cadTabById, drawWalkthrough } from '../js/data/cad.js';
+import { existsSync } from 'node:fs';
+const img = (p) => existsSync(new URL('../' + p, import.meta.url));
+for (const p of parts) {
+  for (const o of p.ops) if (!opById[o]) err(`practice ${p.id}: unknown op ${o}`);
+  for (const s of p.plan) if (!resolve(s.op, s.page)) err(`practice ${p.id}: bad plan link ${s.op}/${s.page}`);
+  for (const f of p.features) if (!opById[f.op]) err(`practice ${p.id}/${f.id}: unknown op ${f.op}`);
+  if (!img(`parts/${p.id}.dxf`)) err(`practice ${p.id}: parts/${p.id}.dxf missing (run node scripts/build-parts.mjs)`);
+}
+let cadCmds = 0;
+for (const t of cadTabs) {
+  if (t.ribbon && !img(`img/mc2025/cad/${t.ribbon}.png`)) err(`cad ${t.id}: missing ribbon image`);
+  const ids = new Set();
+  for (const g of t.groups) for (const c of g.cmds) {
+    cadCmds++;
+    if (ids.has(c.id)) err(`cad ${t.id}: duplicate ${c.id}`); ids.add(c.id);
+    if (!c.name || !c.what) err(`cad ${t.id}/${c.id}: missing name/what`);
+    if (c.viz && !hasViz(c.viz)) err(`cad ${t.id}/${c.id}: unknown viz ${c.viz}`);
+    if (c.shot && !img(`img/mc2025/cad/${c.shot}.png`)) err(`cad ${t.id}/${c.id}: missing shot ${c.shot}`);
+  }
+}
+for (const s of drawWalkthrough.steps) if (!cadTabById[s.tab]?.groups.some((g) => g.cmds.some((c) => c.id === s.cmd))) err(`walkthrough: bad link ${s.tab}/${s.cmd}`);
+console.log(`${parts.length} practice parts, ${cadCmds} CAD functions`);
 console.log(`${operations.length} operations, ${params} parameters, ${symptoms.length} symptoms`);
 if (errors) { console.error(`${errors} problem(s)`); process.exit(1); } else console.log('✓ content checks passed');

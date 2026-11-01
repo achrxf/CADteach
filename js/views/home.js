@@ -98,6 +98,7 @@ export function render() {
 
       <h2 class="section-title">On the machine</h2>
       <div class="strip">
+        <a href="#/cad"><h3>Design (CAD)</h3><p>Wireframe, Transform, Solids, Model Prep, Drafting: the drawing side of Mastercam, tab by tab.</p></a>
         <a href="#/practice"><h3>Practice parts</h3><p>15 parts to program yourself, with drawings, DXF files, the vise setup in 3D and a target cycle time.</p></a>
         <a href="#/fix"><h3>${t('fix')}</h3><p>Chatter, marks, oversize walls, broken tools — find the parameter behind it.</p></a>
         <a href="#/tools/feeds"><h3>${t('feeds')}</h3><p>RPM, feed and chip thinning for dynamic stepovers.</p></a>
