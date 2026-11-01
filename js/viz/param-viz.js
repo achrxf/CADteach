@@ -100,7 +100,7 @@ specs['comp-type'] = {
     const rows = {
       computer: ['Offset by Mastercam', 'No G41/G42', 'D not used', 'Size can only be changed by reposting.'],
       control: ['On the chain', 'G41/G42 posted', `D = full radius (${fmt(r, 3)} for Ø${TOOL_D})`, 'Control does the offset; inside corners must be bigger than the tool radius.'],
-      wear: ['Offset by Mastercam', 'G41/G42 posted', `D = wear only (start at 0)`, `Operator tunes size with small D values. D ${d >= 0 ? '+' : ''}${fmt(d, 2)} → each wall moves ${fmt(Math.abs(d), 2)} mm ${d > 0 ? 'into the part (smaller outside / bigger hole)' : d < 0 ? 'away from the part (bigger outside / smaller hole)' : '— nominal size'}.`],
+      wear: ['Offset by Mastercam', 'G41/G42 posted', `D = wear only (start at 0)`, `Operator tunes size with small D values. D ${d >= 0 ? '+' : ''}${fmt(d, 2)} → the tool moves ${fmt(Math.abs(d), 2)} mm ${d > 0 ? 'away from the part: outside sizes get bigger, holes get smaller' : d < 0 ? 'into the part: outside sizes get smaller, holes get bigger' : '— nominal size'}.`],
       rwear: ['Offset by Mastercam', 'G42/G41 swapped', 'D = wear only, sign reversed', `For shops whose wear offsets are entered with the opposite sign. D ${fmt(d, 2)} moves the wall the opposite way from Wear.`],
       off: ['Tool center on chain', 'No offset', '—', '<b>Part undersize by the tool radius</b> unless the chain already is the tool-center path.'],
     }[type];
