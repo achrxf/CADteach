@@ -179,7 +179,15 @@ export function render(r) {
         const c = e.target.closest('[data-copy]');
         if (c) {
           const url = location.href.split('#')[0] + c.dataset.copy;
-          (navigator.clipboard?.writeText(url) || Promise.reject()).then(() => toast(t('linkCopied')), () => prompt('Copy this link', url));
+          const fallback = () => {
+            const ta = document.createElement('textarea');
+            ta.value = url; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0';
+            document.body.append(ta); ta.select();
+            let ok = false; try { ok = document.execCommand('copy'); } catch { /* blocked */ }
+            ta.remove();
+            toast(ok ? t('linkCopied') : 'Copy this link: ' + url);
+          };
+          try { navigator.clipboard.writeText(url).then(() => toast(t('linkCopied')), fallback); } catch { fallback(); }
         }
         const vf = e.target.closest('[data-verify]');
         if (vf) {

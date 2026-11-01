@@ -520,3 +520,16 @@ mark { background: var(--rapid-soft); color: inherit; border-radius: 2px; }
 .seg button[aria-pressed='true'] { background: var(--feed); border-color: var(--feed); color: #fff; }
 .values.single { display: inline-grid; min-width: 220px; max-width: 100%; }
 .param .values:not(.single) { max-width: 560px; }
+
+/* v1.2 tap targets (≥ 24 px; 32+ on touch) */
+.filters a.pill { min-height: 32px; padding: 4px 12px; font-size: var(--t-sm); }
+.crumbs a { display: inline-block; padding: 4px 0; }
+.viz-ref { padding: 6px 0; }
+input[type='range'] { height: 28px; }
+.symptom .links a { padding: 5px 10px; }
+.palette-results li a { min-height: 40px; }
+@media (pointer: coarse) {
+  .param-actions .icon-btn { min-width: 36px; height: 36px; }
+  .seg button { padding: 7px 14px; }
+}
+.toast { max-width: min(92vw, 560px); overflow-wrap: anywhere; text-align: center; }

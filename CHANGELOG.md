@@ -2,6 +2,13 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.2.0 — 2026-11-01
+
+- Sharp, full-resolution Mastercam 2025 dialog screenshots (42 pages) replace the blurry ones
+- All 12 toolpaths now checked field by field against Mastercam 2025, including Facing, Slot Mill, Area Mill, Dynamic Contour, Peel Mill, Circle Mill, Helix Bore and Thread Mill (real fields and defaults, e.g. Dynamic Contour's Contour Wall page, Thread Mill Lead In/Out, Circle Mill helix 10–45%)
+- Speeds & feeds: 42 materials in ISO groups (aluminium-lithium, Invar, Monel, PTFE, polycarbonate…), suggested Vc and fz by diameter, material filter box
+- Fixes from a 400-user swarm test: "Copy link" no longer opens a browser pop-up when the clipboard is blocked; bigger tap targets (filters, sliders, breadcrumb, links)
+
 ## 1.1.0 — 2026-11-01
 
 Visuals first, checked against a real Mastercam 2025 install.

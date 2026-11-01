@@ -9,7 +9,7 @@ import * as fix from './views/fix.js';
 import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {

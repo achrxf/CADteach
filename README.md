@@ -2,7 +2,7 @@
 
 Mastercam explained parameter by parameter — for programmers and machinists.
 
-**v1.1 covers Mastercam 2025, 2D mill toolpaths.** For every toolpath you get the dialog pages as Mastercam shows them, and for every parameter: what it does, when to change it, typical starting values in aluminium, steel and titanium, the mistakes that scrap parts, and an interactive visual where one helps.
+**v1.2 covers Mastercam 2025, 2D mill toolpaths.** For every toolpath you get the dialog pages as Mastercam shows them, and for every parameter: what it does, when to change it, typical starting values in aluminium, steel and titanium, the mistakes that scrap parts, and an interactive visual where one helps.
 
 ## What's in v1.0
 
