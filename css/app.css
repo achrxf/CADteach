@@ -464,3 +464,59 @@ mark { background: var(--rapid-soft); color: inherit; border-radius: 2px; }
 #content:focus { outline: none; }
 .results { background: var(--surface); }
 .results .result { box-shadow: 0 0 0 0.5px var(--line); }
+.v-num-a { fill: var(--feed-soft); stroke: var(--feed); stroke-width: 1.5; }
+.v-num-b { fill: var(--rapid-soft); stroke: var(--rapid); stroke-width: 1.5; }
+.v-region-m { fill: color-mix(in srgb, var(--good) 14%, transparent); stroke: var(--good); stroke-width: 2; }
+.v-region-a { fill: var(--mistake-soft); stroke: var(--mistake); stroke-width: 2; }
+.v-region-air { fill: color-mix(in srgb, #2fb8c9 18%, transparent); stroke: #2a9aa8; stroke-width: 1.5; }
+.v-region-c { fill: none; stroke: #8a63c9; stroke-width: 1.5; stroke-dasharray: 6 4; }
+
+/* ---------- v1.1: visual-first parameter layout ---------- */
+.page-body { display: block; padding-top: 24px; }
+.page-intro.with-shot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 28px; align-items: start; }
+.checked-note { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--good); margin-top: 4px; }
+.checked-note svg { width: 16px; height: 16px; }
+.page-shot, .param-shot { margin: 0; }
+.page-shot figcaption, .param-shot figcaption { font-size: var(--t-xs); color: var(--ink-3); margin-top: 4px; }
+.shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: #f0f0f0; cursor: zoom-in; overflow: hidden; }
+.shot img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; object-position: top left; }
+.param-shot { max-width: 320px; margin-top: 12px; }
+.param-shot .shot img { max-height: 220px; object-fit: contain; object-position: top left; }
+@media (max-width: 760px) {
+  .page-intro.with-shot { grid-template-columns: 1fr; gap: 14px; }
+  .page-shot { max-width: 420px; }
+}
+
+.params { container-type: inline-size; }
+.param { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 28px; padding: 22px 0 24px; }
+.param .what { margin-top: 8px; font-size: 1.0625rem; }
+.param .when { margin-top: 6px; color: var(--ink-2); }
+@container (min-width: 760px) {
+  .param.has-viz { grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: start; }
+}
+.param-viz { min-width: 0; max-width: 520px; }
+.param-viz:empty { min-height: 320px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); }
+.viz-ref { display: inline-block; font-size: var(--t-sm); margin-top: -6px; }
+.more { margin-top: 10px; max-width: 72ch; }
+.more summary { cursor: pointer; font-size: var(--t-sm); color: var(--ink-2); font-weight: 500; display: inline-flex; align-items: center; gap: 7px; list-style: none; padding: 3px 0; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::after { content: ''; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); margin-left: 2px; transition: transform .15s; }
+.more[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+.more summary:hover { color: var(--ink); }
+.warn-dot { width: 8px; height: 8px; border: 2px solid var(--mistake); transform: rotate(45deg); display: inline-block; }
+.values { margin-top: 10px; }
+
+.lightbox { border: 0; padding: 0; background: transparent; max-width: min(96vw, 1100px); max-height: 92vh; }
+.lightbox::backdrop { background: rgb(10 16 22 / 0.7); }
+.lightbox img { display: block; max-width: 100%; max-height: 88vh; border-radius: var(--r-sm); background: #f0f0f0; }
+.lightbox form { position: absolute; top: 8px; right: 8px; }
+.lightbox-close { background: var(--raised); }
+.viz-controls .seg-row { display: flex !important; flex-direction: column; align-items: flex-start; gap: 6px !important; }
+.viz-controls .seg-row .lbl { font-size: var(--t-xs); color: var(--ink-3); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+.seg button { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--raised); font-size: var(--t-sm); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button:hover { border-color: var(--feed); color: var(--ink); }
+.seg button[aria-pressed='true'] { background: var(--feed); border-color: var(--feed); color: #fff; }
+.values.single { display: inline-grid; min-width: 220px; max-width: 100%; }
+.param .values:not(.single) { max-width: 560px; }

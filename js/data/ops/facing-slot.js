@@ -1,11 +1,11 @@
-import { linking, depthCuts, toolPage, arcFilter } from '../common.js';
+import { linking, depthCuts, toolPage, arcFilter, coolant } from '../common.js';
 
 export const facing = {
   id: 'facing',
   name: 'Facing',
   fr: 'Surfaçage',
   group: 'standard',
-  path: 'Mill Toolpaths → 2D → Face',
+  path: 'Toolpaths → 2D → Face',
   preview: 'facing',
   summary: 'Flattens the top of the stock with a face mill or large endmill, usually the first operation of a setup.',
   useFor: ['Cleaning up the top of saw-cut stock', 'Setting the reference height (Z0) for the rest of the program', 'Large flat areas'],
@@ -92,6 +92,7 @@ export const facing = {
     depthCuts,
     linking,
     arcFilter,
+    coolant,
   ],
 };
 
@@ -100,7 +101,7 @@ export const slot = {
   name: 'Slot Mill',
   fr: 'Rainurage',
   group: 'standard',
-  path: 'Mill Toolpaths → 2D → Slot Mill',
+  path: 'Toolpaths → 2D → Slot mill (Toolpath Type page)',
   preview: 'slot',
   summary: 'Machines obround slots (two straight sides joined by arcs) chained as a closed shape, with a ramp entry and optional finish passes.',
   useFor: ['Keyways and obround slots', 'Slots where you want automatic ramp entry and finish passes'],
@@ -178,5 +179,6 @@ export const slot = {
     depthCuts,
     linking,
     arcFilter,
+    coolant,
   ],
 };

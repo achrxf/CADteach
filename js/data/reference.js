@@ -55,7 +55,7 @@ export const symptoms = [
     area: 'Size',
     causes: [
       { text: 'Inside corner radius smaller than the tool radius with Control/Wear comp — the control can’t offset. Use a smaller tool or Computer comp.', links: [['contour', 'cut', 'comp-type']] },
-      { text: 'Lead line shorter than the tool radius — G41/G42 can’t turn on.', links: [['contour', 'lead-in-out', 'line-length']] },
+      { text: 'Lead line shorter than the tool radius — G41/G42 can’t turn on.', links: [['contour', 'lead-in-out', 'line-type']] },
     ],
   },
   {
@@ -66,7 +66,7 @@ export const symptoms = [
     causes: [
       { text: 'Straight plunge into solid stock — use helix or ramp entry.', links: [['pocket', 'entry-motion', 'entry-type'], ['dynamic-mill', 'entry-motion', 'entry-method']] },
       { text: 'Helix radius too small: a center core remains.', links: [['pocket', 'entry-motion', 'helix-radius']] },
-      { text: 'Ramp angle steeper than the tool allows.', links: [['pocket', 'entry-motion', 'helix-angle']] },
+      { text: 'Ramp angle steeper than the tool allows.', links: [['pocket', 'entry-motion', 'plunge-angle']] },
       { text: 'Feed plane too low on uneven stock — rapid into the material.', links: [['contour', 'linking', 'feed-plane']] },
     ],
   },
@@ -77,9 +77,9 @@ export const symptoms = [
     area: 'Tool life',
     causes: [
       { text: 'Dynamic stepover small but feed not increased — chip too thin, the tool rubs and heats.', links: [['dynamic-mill', 'cut', 'stepover']], tool: 'feeds' },
-      { text: 'Finish passes so small the tool rubs.', links: [['contour', 'depth-cuts', 'finish-step']] },
+      { text: 'Finish passes so small the tool rubs.', links: [['contour', 'depth-cuts', 'finish-cuts']] },
       { text: 'Surface speed too high for the material (titanium especially).', links: [], tool: 'feeds' },
-      { text: 'No coolant or wrong coolant in titanium/stainless.', links: [['contour', 'tool', 'coolant']] },
+      { text: 'No coolant or wrong coolant in titanium/stainless.', links: [['contour', 'coolant', 'coolant']] },
     ],
   },
   {
@@ -90,7 +90,7 @@ export const symptoms = [
     causes: [
       { text: 'Engagement in corners is much higher than the stepover suggests in standard pocketing — use Dynamic Mill or High speed pocket.', links: [['pocket', 'roughing', 'cutting-method'], ['dynamic-mill', 'cut', 'stepover']] },
       { text: 'Toolpath radius too small — sharp direction changes.', links: [['dynamic-mill', 'cut', 'toolpath-radius']] },
-      { text: 'Rest material not removed — use a rest pass with a smaller tool before finishing.', links: [['dynamic-mill', 'rest', 'rest-source']] },
+      { text: 'Rest material not removed — use a rest pass with a smaller tool before finishing.', links: [['dynamic-mill', 'corner-pretreatment', 'corners'], ['dynamic-mill', 'stock-page', 'rest-source']] },
     ],
   },
   {
@@ -120,8 +120,8 @@ export const symptoms = [
     fr: 'Voile au fond d’une découpe débouchante',
     area: 'Size',
     causes: [
-      { text: 'No break-through amount, or it doesn’t include the tool corner radius.', links: [['contour', 'break-through', 'break-through-amount']] },
-      { text: 'Drill without tip comp on a through hole.', links: [['drill', 'tip-comp', 'tip-comp']] },
+      { text: 'No break-through amount, or it doesn’t include the tool corner radius.', links: [['contour', 'linking', 'break-through']] },
+      { text: 'Drill without tip comp on a through hole.', links: [['drill', 'linking', 'tip-comp']] },
     ],
   },
   {
@@ -130,7 +130,7 @@ export const symptoms = [
     fr: 'La pièce se détache pendant la découpe',
     area: 'Setup',
     causes: [
-      { text: 'Add tabs, or more/bigger tabs.', links: [['contour', 'tabs', 'tab-count'], ['contour', 'tabs', 'tab-size']] },
+      { text: 'Add tabs, or more/bigger tabs.', links: [['contour', 'tabs', 'tab-position'], ['contour', 'tabs', 'tab-size']] },
     ],
   },
   {

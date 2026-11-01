@@ -35,7 +35,8 @@ const strings = {
   },
 };
 
-let lang = store.get('lang', (navigator.language || 'en').startsWith('fr') ? 'fr' : 'en');
+// English only for now; French UI strings are kept for a later release.
+let lang = 'en';
 export const getLang = () => lang;
 export const setLang = (l) => { lang = l; store.set('lang', l); document.documentElement.lang = l; };
 export const t = (k) => strings[lang][k] ?? strings.en[k] ?? k;

@@ -1,5 +1,5 @@
 import { html, raw, store, toast, esc } from '../util.js';
-import { t, nm, alt } from '../i18n.js';
+import { t, nm } from '../i18n.js';
 import { ui } from '../icons.js';
 import { opById, groups, defaultPageIndex } from '../data/index.js';
 import { mountViz, hasViz, vizTitles } from '../viz/param-viz.js';
@@ -16,7 +16,6 @@ export function render(r) {
   const notes = store.get('notes', {});
   const verified = store.get('verified', {});
   const version = store.get('version', '2025');
-  const pageViz = page.viz || page.params.find((p) => p.viz)?.viz;
   const opKey = keyOf(op.id);
   const pageKey = keyOf(op.id, page.id);
 
@@ -30,32 +29,49 @@ export function render(r) {
     return '';
   };
 
+  const shownViz = new Set();
+  const shotImg = (name, alt, cls = 'shot') =>
+    html`<button type="button" class="${cls}" data-zoom="img/mc2025/${name}.jpg" aria-label="Enlarge screenshot: ${alt}"><img src="img/mc2025/${name}.jpg" alt="${alt}" loading="lazy"></button>`;
+
   const param = (p) => {
     const k = keyOf(op.id, page.id, p.id);
     const saved = !!bookmarks[k];
-    return html`<article class="param" id="p-${p.id}" data-param="${p.id}">
-      <div class="param-top">
-        <div class="titles">
-          <h3>${nm(p)} ${p.isNew ? html`<span class="pill new">${t('newIn')} ${p.isNew}</span>` : ''}</h3>
-          ${alt(p) ? html`<span class="fr">${alt(p)}</span>` : ''}
+    let side = '';
+    if (p.viz && hasViz(p.viz)) {
+      if (!shownViz.has(p.viz)) { shownViz.add(p.viz); side = html`<div class="param-viz" data-viz="${p.viz}"></div>`; }
+      else side = html`<a class="viz-ref" href="#/op/${op.id}/${page.id}/${firstWithViz(page, p.viz)}">See the visual “${vizTitles[p.viz]}” above</a>`;
+    }
+    const shot = p.shot ? html`<figure class="param-shot">${shotImg(p.shot, `${p.name} in the Mastercam 2025 dialog`)}<figcaption>In the Mastercam 2025 dialog</figcaption></figure>` : '';
+    const nMist = p.mistakes?.length || 0;
+    return html`<article class="param ${side && !String(side).includes('viz-ref') ? 'has-viz' : ''}" id="p-${p.id}" data-param="${p.id}">
+      <div class="param-text">
+        <div class="param-top">
+          <div class="titles">
+            <h3>${nm(p)} ${p.isNew ? html`<span class="pill new">${t('newIn')} ${p.isNew}</span>` : ''}</h3>
+          </div>
+          <div class="param-actions">
+            <button class="icon-btn" type="button" data-note="${k}" aria-label="${t('note')}" title="${t('addNote')}" aria-expanded="${!!notes[k]}">${raw(ui.note)}</button>
+            <button class="icon-btn" type="button" data-bookmark="${k}" aria-pressed="${saved}" aria-label="${saved ? t('bookmarked') : t('bookmark')}" title="${t('bookmark')}">${raw(saved ? ui.savedFill : ui.saved)}</button>
+            <button class="icon-btn" type="button" data-copy="#/op/${op.id}/${page.id}/${p.id}" aria-label="${t('copyLink')}" title="${t('copyLink')}">${raw(ui.link)}</button>
+          </div>
         </div>
-        <div class="param-actions">
-          ${p.viz && hasViz(p.viz) ? html`<button class="icon-btn" type="button" data-show-viz="${p.viz}" aria-label="Show visual: ${vizTitles[p.viz]}" title="Show visual">${raw(ui.learn)}</button>` : ''}
-          <button class="icon-btn" type="button" data-note="${k}" aria-label="${t('note')}" title="${t('addNote')}" aria-expanded="${!!notes[k]}">${raw(ui.note)}</button>
-          <button class="icon-btn" type="button" data-bookmark="${k}" aria-pressed="${saved}" aria-label="${saved ? t('bookmarked') : t('bookmark')}" title="${t('bookmark')}">${raw(saved ? ui.savedFill : ui.saved)}</button>
-          <button class="icon-btn" type="button" data-copy="#/op/${op.id}/${page.id}/${p.id}" aria-label="${t('copyLink')}" title="${t('copyLink')}">${raw(ui.link)}</button>
+        <p class="what">${p.what}</p>
+        ${p.when ? html`<p class="when">${p.when}</p>` : ''}
+        ${values(p)}
+        ${nMist || p.gcode || p.tip
+          ? html`<details class="more">
+              <summary>${nMist ? html`<span class="warn-dot" aria-hidden="true"></span>${nMist} common mistake${nMist > 1 ? 's' : ''}` : 'More'}${p.gcode ? ' · G-code' : ''}${p.tip ? ' · Formula' : ''}</summary>
+              ${p.tip ? html`<p class="tip">${p.tip}</p>` : ''}
+              ${nMist ? html`<ul class="mistakes" aria-label="${t('mistakes')}">${p.mistakes.map((m) => html`<li>${m}</li>`)}</ul>` : ''}
+              ${p.gcode ? html`<p class="gcode-note">G-code: <code>${p.gcode}</code></p>` : ''}
+            </details>`
+          : ''}
+        ${shot}
+        <div class="note-box" ${notes[k] ? '' : raw('hidden')}>
+          <textarea class="input" data-note-text="${k}" placeholder="Your own note — e.g. the value your shop uses on the DMU">${notes[k] || ''}</textarea>
         </div>
       </div>
-      <p class="what">${p.what}</p>
-      ${p.when ? html`<p class="when"><strong>${t('whenToChange')}:</strong> ${p.when}</p>` : ''}
-      ${values(p)}
-      ${p.tip ? html`<p class="tip">${p.tip}</p>` : ''}
-      ${p.mistakes?.length ? html`<ul class="mistakes" aria-label="${t('mistakes')}">${p.mistakes.map((m) => html`<li>${m}</li>`)}</ul>` : ''}
-      ${p.gcode ? html`<p class="gcode-note">G-code: <code>${p.gcode}</code></p>` : ''}
-      <div class="inline-viz" hidden></div>
-      <div class="note-box" ${notes[k] ? '' : raw('hidden')}>
-        <textarea class="input" data-note-text="${k}" placeholder="Your own note — e.g. the value your shop uses on the DMU">${notes[k] || ''}</textarea>
-      </div>
+      ${side}
     </article>`;
   };
 
@@ -69,7 +85,6 @@ export function render(r) {
       <header class="op-head">
         <div>
           <h1>${nm(op)}</h1>
-          <div class="fr">${alt(op)}</div>
           <p class="summary">${op.summary}</p>
           <div class="head-actions">
             <button class="btn ghost" type="button" data-bookmark="${opKey}" aria-pressed="${!!bookmarks[opKey]}">${raw(bookmarks[opKey] ? ui.savedFill : ui.saved)} ${bookmarks[opKey] ? t('bookmarked') : t('bookmark')}</button>
@@ -92,35 +107,33 @@ export function render(r) {
       </nav>
 
       <div class="page-body">
-        <div>
-          <div class="page-intro">
+        <div class="page-intro ${page.shot ? 'with-shot' : ''}">
+          <div>
             <h2>${nm(page)} ${page.isNew ? html`<span class="pill new">${t('newIn')} ${page.isNew}</span>` : ''}</h2>
             ${page.intro ? html`<p>${page.intro}</p>` : ''}
+            ${op.checked && page.shot ? html`<p class="checked-note">${raw(ui.check)} Field names checked against Mastercam 2025</p>` : ''}
           </div>
-          <div class="params">${page.params.map(param)}</div>
-          <div class="verify-bar">
-            ${isVerified
-              ? html`<span class="pill ok">${raw(ui.check)} ${t('verified')}</span><button class="btn ghost" type="button" data-verify="${pageKey}">Undo</button>`
-              : html`<span>${t('verifyText')}</span><button class="btn ghost" type="button" data-verify="${pageKey}">${raw(ui.check)} ${t('markVerified')}</button>`}
-          </div>
-          ${pagerLinks(op, page)}
+          ${page.shot ? html`<figure class="page-shot">${shotImg(page.shot, `${page.name} page in Mastercam 2025`)}<figcaption>This page in Mastercam 2025 · tap to enlarge</figcaption></figure>` : ''}
         </div>
-        <aside class="dock" aria-label="Interactive visual">${pageViz ? '' : raw('<p class="muted" style="font-size:var(--t-sm)">No visual for this page yet.</p>')}</aside>
+        <div class="params">${page.params.map(param)}</div>
+        <div class="verify-bar">
+          ${isVerified
+            ? html`<span class="pill ok">${raw(ui.check)} ${t('verified')}</span><button class="btn ghost" type="button" data-verify="${pageKey}">Undo</button>`
+            : html`<span>Does this page match your Mastercam? Mark it so you know which pages you have checked yourself.</span><button class="btn ghost" type="button" data-verify="${pageKey}">${raw(ui.check)} ${t('markVerified')}</button>`}
+        </div>
+        ${pagerLinks(op, page)}
       </div>
+      <dialog class="lightbox" aria-label="Screenshot"><form method="dialog"><button class="icon-btn lightbox-close" aria-label="Close">Close</button></form><img alt=""></dialog>
     `,
     mount(root) {
       const cleanups = [];
-      const dock = root.querySelector('.dock');
-      let dockKind = null;
-      let dockStop = () => {};
-      const showDock = (kind) => {
-        if (kind === dockKind) return;
-        dockStop();
-        dockKind = kind;
-        dockStop = mountViz(kind, dock);
-      };
-      if (pageViz) showDock(pageViz);
-      cleanups.push(() => dockStop());
+      const vizStops = [];
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) if (e.isIntersecting) { io.unobserve(e.target); vizStops.push(mountViz(e.target.dataset.viz, e.target)); }
+      }, { rootMargin: '300px' });
+      root.querySelectorAll('.param-viz').forEach((el) => io.observe(el));
+      cleanups.push(() => { io.disconnect(); vizStops.forEach((f) => f()); });
+      const lightbox = root.querySelector('.lightbox');
 
       // 3D preview (lazy)
       const stage = root.querySelector('#op-stage');
@@ -132,20 +145,10 @@ export function render(r) {
         .catch(() => { stage.innerHTML = '<p class="empty">3D preview needs WebGL.</p>'; });
       cleanups.push(() => { cancelled = true; dispose3d(); });
 
-      const inlineStops = new Map();
       const onClick = (e) => {
-        const v = e.target.closest('[data-show-viz]');
-        if (v) {
-          const kind = v.dataset.showViz;
-          if (innerWidth >= 1280) {
-            showDock(kind);
-            dock.animate?.([{ outline: '2px solid var(--feed)' }, { outline: '2px solid transparent' }], { duration: 900 });
-          } else {
-            const box = v.closest('.param').querySelector('.inline-viz');
-            if (box.hidden) { box.hidden = false; inlineStops.set(box, mountViz(kind, box)); }
-            else { box.hidden = true; inlineStops.get(box)?.(); box.innerHTML = ''; }
-          }
-        }
+        const z = e.target.closest('[data-zoom]');
+        if (z) { lightbox.querySelector('img').src = z.dataset.zoom; lightbox.querySelector('img').alt = z.getAttribute('aria-label'); lightbox.showModal(); }
+        if (e.target === lightbox) lightbox.close();
         const b = e.target.closest('[data-bookmark]');
         if (b) {
           const k = b.dataset.bookmark;
@@ -203,7 +206,6 @@ export function render(r) {
       cleanups.push(() => {
         root.removeEventListener('click', onClick);
         root.removeEventListener('input', onInput);
-        inlineStops.forEach((s) => s());
       });
       // keep the current tab visible in the scrolling tab bar
       root.querySelector('.page-tabs [aria-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -219,4 +221,8 @@ function pagerLinks(op, page) {
     ${prev ? html`<a class="btn ghost" href="#/op/${op.id}/${prev.id}">‹ ${nm(prev)}</a>` : raw('<span></span>')}
     ${next ? html`<a class="btn ghost" href="#/op/${op.id}/${next.id}">${nm(next)} ›</a>` : ''}
   </nav>`;
+}
+
+function firstWithViz(page, kind) {
+  return page.params.find((p) => p.viz === kind)?.id || '';
 }

@@ -29,7 +29,7 @@ export function render(r) {
       <div class="symptom-list">
         ${list.map(
           (s) => html`<details class="symptom" id="${s.id}" ${s.id === openId ? raw('open') : ''}>
-            <summary><h3>${nm(s)} ${alt(s) ? html`<span class="fr" style="font-family:var(--f-body);font-size:var(--t-sm)">${alt(s)}</span>` : ''}</h3><span class="pill">${s.area}</span><span class="chev">${raw(ui.chev.replace('<svg', '<svg width="18" height="18"'))}</span></summary>
+            <summary><h3>${nm(s)}</h3><span class="pill">${s.area}</span><span class="chev">${raw(ui.chev.replace('<svg', '<svg width="18" height="18"'))}</span></summary>
             <ol>
               ${s.causes.map(
                 (c) => html`<li>${c.text}

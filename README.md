@@ -2,18 +2,18 @@
 
 Mastercam explained parameter by parameter — for programmers and machinists.
 
-**v1.0 covers Mastercam 2025, 2D mill toolpaths.** For every toolpath you get the dialog pages as Mastercam shows them, and for every parameter: what it does, when to change it, typical starting values in aluminium, steel and titanium, the mistakes that scrap parts, and an interactive visual where one helps.
+**v1.1 covers Mastercam 2025, 2D mill toolpaths.** For every toolpath you get the dialog pages as Mastercam shows them, and for every parameter: what it does, when to change it, typical starting values in aluminium, steel and titanium, the mistakes that scrap parts, and an interactive visual where one helps.
 
 ## What's in v1.0
 
 - **12 toolpaths:** Facing, Contour, Pocket, Slot Mill, Dynamic Mill, Dynamic Contour, Area Mill, Peel Mill, Drill, Circle Mill, Helix Bore, Thread Mill
-- **19 interactive visuals:** compensation side and type, stock to leave, depth cuts, the five linking heights (animated), lead in/out, multi passes, tabs, stepover, engagement and chip thinning, roll around corners, facing overlaps, drill cycles, helix entry, thread milling direction, drill tip comp, chamfer tip offset, ramping, break through
+- **33 interactive visuals**, shown next to each parameter, plus real Mastercam 2025 dialog screenshots (`img/mc2025/`). The first 19: compensation side and type, stock to leave, depth cuts, the five linking heights (animated), lead in/out, multi passes, tabs, stepover, engagement and chip thinning, roll around corners, facing overlaps, drill cycles, helix entry, thread milling direction, drill tip comp, chamfer tip offset, ramping, break through
 - **3D previews** of each toolpath (three.js) — drag to rotate
 - **Fix a problem:** 16 shop-floor symptoms traced to the parameters that cause them
 - **Speeds & feeds** calculator with chip thinning, metric and inch
 - **G-code explainer** for Fanuc/Haas style programs, with warnings for risky blocks
 - **Search** everything with `/` or `Ctrl+K` — English or French names
-- **English / French** interface, dark mode, bookmarks and personal notes (export/import)
+- Dark mode, bookmarks and personal notes (export/import)
 - **"Checked in my Mastercam"** marker per page, to track which pages you verified on a real 2025 install
 - Works offline once loaded (installable as an app — PWA)
 

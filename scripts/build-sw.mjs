@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const root = new URL('..', import.meta.url).pathname;
-const include = ['index.html', 'manifest.webmanifest', 'css', 'js', 'fonts', 'icons', 'vendor'];
+const include = ['index.html', 'manifest.webmanifest', 'css', 'js', 'fonts', 'icons', 'vendor', 'img'];
 const files = [];
 const walk = (p) => (statSync(p).isDirectory() ? readdirSync(p).forEach((f) => walk(join(p, f))) : files.push(p));
 include.forEach((p) => walk(join(root, p)));

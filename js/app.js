@@ -9,7 +9,7 @@ import * as fix from './views/fix.js';
 import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -99,14 +99,12 @@ function renderShell() {
       <nav class="nav" id="nav"></nav>
       <div class="sidebar-foot">
         <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"></button>
-        <button class="icon-btn" type="button" data-lang-toggle aria-label="Language">${getLang() === 'fr' ? 'EN' : 'FR'}</button>
         <a class="icon-btn" href="#/about" style="margin-left:auto;text-decoration:none">v${APP_VERSION}</a>
       </div>
     </aside>
     <header class="topbar">
       <a class="brand" href="#/">${raw(ui.logo)}<span class="brand-name">CADteach</span></a>
       ${versionSelect('ver-top')}
-      <button class="icon-btn" type="button" data-lang-toggle aria-label="Language">${getLang() === 'fr' ? 'EN' : 'FR'}</button>
       <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"></button>
     </header>
     <main class="main"><div class="content" id="content" tabindex="-1"></div></main>

@@ -108,7 +108,7 @@ function about() {
 
       <h2 class="section-title">Checked pages</h2>
       <p>${done} of ${pages.length} parameter pages marked as checked against a real Mastercam install on this device.</p>
-      <p class="muted" style="font-size:var(--t-sm);max-width:70ch">Explanations are written from Mastercam knowledge and shop practice, not copied from the Mastercam help. Field names and defaults can differ slightly between versions — when a page matches your install, mark it as checked. Typical values are starting points for carbide in a rigid setup; the tool maker’s data always wins.</p>
+      <p class="muted" style="font-size:var(--t-sm);max-width:70ch">Contour, Pocket, Dynamic Mill and Drill were checked field by field against Mastercam 2025 (Mill Default MM template); the dialog screenshots come from that install. Explanations are our own words, not copied from the Mastercam help. Field names and defaults can differ slightly between versions — when a page matches your install, mark it as checked. Typical values are starting points for carbide in a rigid setup; the tool maker’s data always wins.</p>
 
       <h2 class="section-title">Versions</h2>
       <ul class="timeline">${versions.map((v) => html`<li><span class="v">${v.id}</span><span>${v.name} — ${v.status === 'content' ? 'content available' : 'planned'}</span></li>`)}</ul>

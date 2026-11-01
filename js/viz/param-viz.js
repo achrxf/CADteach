@@ -5,6 +5,7 @@
 // mountViz(kind, el) renders it and keeps it live.
 
 import { esc, fmt } from '../util.js';
+import { addSpecs } from './specs-more.js';
 
 const W = 420;
 const H = 250;
@@ -839,6 +840,8 @@ specs['break-through'] = {
 };
 
 // ---------------------------------------------------------------------------
+addSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch, fmt, TOOL_D });
+
 export const vizTitles = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
 export const hasViz = (k) => !!specs[k];
 
