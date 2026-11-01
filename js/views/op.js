@@ -3,6 +3,8 @@ import { t, nm } from '../i18n.js';
 import { ui } from '../icons.js';
 import { opById, groups, defaultPageIndex } from '../data/index.js';
 import { mountViz, hasViz, vizTitles } from '../viz/param-viz.js';
+import { droHtml, droTicker } from './machine.js';
+import { markVisited, opProgress, bestScore } from './progress.js';
 
 const keyOf = (...p) => p.join('/');
 
@@ -19,6 +21,10 @@ export function render(r) {
   const opKey = keyOf(op.id);
   const pageKey = keyOf(op.id, page.id);
 
+  markVisited(op.id, page.id);
+  const visited = store.get('visited', {});
+  const prog = opProgress(op);
+  const best = bestScore(op.id);
   const recent = store.get('recent', []).filter((id) => id !== op.id);
   store.set('recent', [op.id, ...recent].slice(0, 6));
 
@@ -82,25 +88,42 @@ export function render(r) {
     keepFocus: !!pageId,
     html: html`
       <div class="crumbs"><a href="#/">Mastercam ${version}</a> › 2D Mill › ${nm(group)}</div>
-      <header class="op-head">
-        <div>
-          <h1>${nm(op)}</h1>
-          <p class="summary">${op.summary}</p>
-          <div class="head-actions">
-            <button class="btn ghost" type="button" data-bookmark="${opKey}" aria-pressed="${!!bookmarks[opKey]}">${raw(bookmarks[opKey] ? ui.savedFill : ui.saved)} ${bookmarks[opKey] ? t('bookmarked') : t('bookmark')}</button>
-            <span class="pill" title="Where to find it in Mastercam">${op.path}</span>
+      <div class="op-head">
+        <header class="machine op-machine" data-group="${op.group}">
+          <div class="machine-bar">
+            <span class="lamp" aria-hidden="true"></span><span>${nm(group)}</span>
+            <span class="machine-bar-r" title="Where to find it in Mastercam">${op.path}</span>
           </div>
-          <div class="use-avoid" style="margin-top:18px">
+          <div class="machine-body">
+            <div class="op-head-text">
+              <h1>${nm(op)}</h1>
+              <p class="summary">${op.summary}</p>
+              <div class="head-actions">
+                <a class="btn btn-cycle" href="#/quiz/${op.id}"><span class="cycle-dot" aria-hidden="true"></span>Test yourself${best ? html` <span class="quiz-badge ${best.score === best.of ? 'perfect' : ''}">best ${best.score}/${best.of}</span>` : ''}</a>
+                <button class="btn ghost" type="button" data-bookmark="${opKey}" aria-pressed="${!!bookmarks[opKey]}">${raw(bookmarks[opKey] ? ui.savedFill : ui.saved)} ${bookmarks[opKey] ? t('bookmarked') : t('bookmark')}</button>
+              </div>
+              <div class="page-meter" title="Pages of this toolpath you have opened">
+                <span class="meter" aria-hidden="true">${op.pages.map((p) => html`<i class="${visited[op.id + '/' + p.id] ? 'on' : ''} ${p.id === page.id ? 'cur' : ''}"></i>`)}</span>
+                <span>${prog.seen} of ${prog.total} pages opened</span>
+              </div>
+            </div>
+            <div class="screen">
+              <div class="op-stage" id="op-stage" aria-label="3D preview of the ${op.name} toolpath">
+                <div class="stage-legend"><span><i></i>feed</span><span><i class="rapid"></i>rapid</span></div>
+                <div class="stage-hint">${matchMedia('(pointer: coarse)').matches ? 'Two fingers to rotate' : 'Drag to rotate'}</div>
+              </div>
+              ${droHtml(op.preview)}
+            </div>
+          </div>
+        </header>
+        <div class="op-brief">
+          <div class="use-avoid">
             <div class="use"><h3>${t('useFor')}</h3><ul>${op.useFor.map((u) => html`<li>${u}</li>`)}</ul></div>
             <div class="avoid"><h3>${t('avoid')}</h3><ul>${op.avoid.map((u) => html`<li>${u}</li>`)}</ul></div>
           </div>
           <p class="chain-note"><strong>${t('chaining')}:</strong> ${op.chaining}</p>
         </div>
-        <div class="op-stage" id="op-stage" aria-label="3D preview of the ${op.name} toolpath">
-          <div class="stage-legend"><span><i></i>feed</span><span><i class="rapid"></i>rapid</span></div>
-          <div class="stage-hint">${matchMedia('(pointer: coarse)').matches ? 'Two fingers to rotate' : 'Drag to rotate'}</div>
-        </div>
-      </header>
+      </div>
 
       <nav class="page-tabs" aria-label="Parameter pages">
         <span class="tabs-op">${nm(op)}</span>
@@ -141,7 +164,7 @@ export function render(r) {
       let dispose3d = () => {};
       let cancelled = false;
       import('../viz/preview3d.js')
-        .then((m) => m.mountPreview(stage, op.preview))
+        .then((m) => m.mountPreview(stage, op.preview, { onTick: droTicker(root, op.preview) }))
         .then((d) => { if (cancelled) d(); else dispose3d = d; })
         .catch(() => { stage.innerHTML = '<p class="empty">3D preview needs WebGL.</p>'; });
       cleanups.push(() => { cancelled = true; dispose3d(); });

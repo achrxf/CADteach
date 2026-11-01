@@ -11,7 +11,7 @@ async function load() {
   }
 }
 
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888';
+const css = (name, el = document.documentElement) => getComputedStyle(el).getPropertyValue(name).trim() || '#888';
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---- geometry helpers (mm, Z up) ---------------------------------------
@@ -275,7 +275,7 @@ let partMat = null;
 function mesh(T, geo) { return new T.Mesh(geo, partMat); }
 
 // ---------------------------------------------------------------------------
-export async function mountPreview(el, kind, { autoRotate = true } = {}) {
+export async function mountPreview(el, kind, { autoRotate = true, onTick = null } = {}) {
   await load();
   const T = THREE;
   const make = scenes[kind] || scenes.contour;
@@ -311,13 +311,15 @@ export async function mountPreview(el, kind, { autoRotate = true } = {}) {
 
   const disposables = [];
   const mats = {};
+  // Colours come from the tokens in scope of the stage, so a dark machine panel can re-tint the scene.
   const applyColors = () => {
-    mats.part.color.set(css('--part'));
-    mats.edge.color.set(css('--ink-3'));
-    mats.trail.color.set(css('--feed'));
-    mats.full.color.set(css('--feed'));
-    mats.rapid.color.set(css('--rapid'));
-    mats.tool.color.set(css('--ink-2'));
+    const c = (n) => css(n, el);
+    mats.part.color.set(c('--part'));
+    mats.edge.color.set(c('--ink-3'));
+    mats.trail.color.set(c('--feed'));
+    mats.full.color.set(c('--feed'));
+    mats.rapid.color.set(c('--rapid'));
+    mats.tool.color.set(c('--ink-2'));
   };
   mats.part = new T.MeshStandardMaterial({ metalness: 0.35, roughness: 0.55 });
   partMat = mats.part;
@@ -393,7 +395,17 @@ export async function mountPreview(el, kind, { autoRotate = true } = {}) {
     tool.position.set(s.a[0] + (s.b[0] - s.a[0]) * f, s.a[1] + (s.b[1] - s.a[1]) * f, s.a[2] + (s.b[2] - s.a[2]) * f);
     // trail: all feed segments before this one
     trailGeo.setDrawRange(0, s.done * 2);
+    // Readout for the DRO: X/Y from the stock centre, Z from the stock top (like a part zero).
+    if (onTick) {
+      const now = performance.now();
+      if (now - lastTick > 70) {
+        lastTick = now;
+        const p = tool.position;
+        onTick({ x: p.x - cx, y: p.y - cy, z: p.z - STOCK.z, rapid: !!s.b[3], block: lo, to: [s.b[0] - cx, s.b[1] - cy, s.b[2] - STOCK.z], blocks: seg.length });
+      }
+    }
   };
+  let lastTick = 0;
   const frame = () => {
     if (!running) return;
     raf = requestAnimationFrame(frame);
@@ -402,7 +414,10 @@ export async function mountPreview(el, kind, { autoRotate = true } = {}) {
     if (animateTool) place((performance.now() - t0) / 1000);
     renderer.render(scene, camera);
   };
-  if (!animateTool) { tool.position.set(P[0][0], P[0][1], P[0][2]); trailGeo.setDrawRange(0, feedSegs.length); }
+  if (!animateTool) {
+    tool.position.set(P[0][0], P[0][1], P[0][2]); trailGeo.setDrawRange(0, feedSegs.length);
+    onTick?.({ x: P[0][0] - cx, y: P[0][1] - cy, z: P[0][2] - STOCK.z, rapid: true, block: 0, to: [P[0][0] - cx, P[0][1] - cy, P[0][2] - STOCK.z], blocks: seg.length, still: true });
+  }
   frame();
 
   const onTheme = () => applyColors();

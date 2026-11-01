@@ -2,6 +2,17 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.3.0 — 2026-11-01
+
+More fun to walk into.
+
+- Machine-screen look: the home page and every toolpath open on a dark control panel, with the 3D backplot as the screen and a live DRO under it (X Y Z, F or RAPID, S, tool and the current program block, ticking as the tool moves)
+- A colour per toolpath family (Standard blue, Dynamic teal, Holes violet) on tiles, headers, navigation and the first-part path
+- "Test yourself": an 8-question quiz on every toolpath, built from its own fields, with instant answers, a link to read more, a score ring and your best score
+- Progress: pages you have opened show as a ring on each tile and a meter on each toolpath
+- "Program a first part": Facing → Dynamic Mill → Contour → Pocket → Drill, in machining order
+- Drafting-grid background; toolpath icons draw themselves on hover
+
 ## 1.2.1 — 2026-11-01
 
 Fixes from an 8-person tester panel (simulated users: junior programmer, operator, instructor, student, shop owner, sceptic, older machinist, designer):

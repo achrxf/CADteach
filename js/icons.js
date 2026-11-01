@@ -1,6 +1,7 @@
 // Inline SVG icons. Operation icons are tiny top views of the toolpath pattern.
+// pathLength="1" lets CSS draw the strokes in (tile hover animation).
 const s = (body, vb = 24) =>
-  `<svg viewBox="0 0 ${vb} ${vb}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  `<svg viewBox="0 0 ${vb} ${vb}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body.replace(/<(path|rect|circle)\b/g, '<$1 pathLength="1"')}</svg>`;
 
 export const opIcons = {
   facing: s('<rect x="3" y="4" width="18" height="16" rx="1" opacity=".35"/><path d="M5 7h14M19 7v3M19 10H5M5 10v3M5 13h14M19 13v3M19 16H5"/>'),

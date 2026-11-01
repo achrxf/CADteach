@@ -8,8 +8,9 @@ import * as opView from './views/op.js';
 import * as fix from './views/fix.js';
 import * as tools from './views/tools.js';
 import * as misc from './views/misc.js';
+import * as quiz from './views/quiz.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -30,7 +31,7 @@ function parse() {
 }
 
 const routes = {
-  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc,
+  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz,
 };
 
 let cleanup = () => {};
@@ -145,11 +146,12 @@ function renderNav(r) {
       <a href="#/fix" ${cur(top === 'fix')}>${raw(ui.fix)}${t('fix')}</a>
       <a href="#/tools/feeds" ${cur(top === 'tools' && opId === 'feeds')}>${raw(ui.calc)}${t('feeds')}</a>
       <a href="#/tools/gcode" ${cur(top === 'tools' && opId === 'gcode')}>${raw(ui.gcode)}${t('gcode')}</a>
+      <a href="#/quiz" ${cur(top === 'quiz')}>${raw(ui.check)}Test yourself</a>
       <a href="#/glossary" ${cur(top === 'glossary')}>${raw(ui.book)}${t('glossary')}</a>
       <a href="#/saved" ${cur(top === 'saved')}>${raw(ui.saved)}${t('saved')}</a>
     </div>
     ${groups.map(
-      (g) => html`<div class="nav-section"><div class="nav-heading">${nm(g)}</div>
+      (g) => html`<div class="nav-section" data-group="${g.id}"><div class="nav-heading">${nm(g)}</div>
         ${operations.filter((o) => o.group === g.id).map((o) => html`
           <a href="#/op/${o.id}" ${cur(top === 'op' && opId === o.id)}><span class="op-icon">${raw(opIcons[o.id] || '')}</span>${nm(o)}</a>
           ${top === 'op' && opId === o.id ? html`<div class="sub">${o.pages.map((p, i) => html`<a href="#/op/${o.id}/${p.id}" ${cur((pageId || o.pages[defaultPageIndex(o)].id) === p.id)}>${nm(p)}</a>`)}</div>` : ''}
@@ -159,7 +161,7 @@ function renderNav(r) {
   nav.querySelector('[aria-current="page"]:not(.nav-section:first-child a)')?.scrollIntoView({ block: 'nearest' });
   document.querySelectorAll('.tabbar [data-tab]').forEach((a) => {
     const tab = a.dataset.tab;
-    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' : top === tab;
+    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' : top === tab;
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }
