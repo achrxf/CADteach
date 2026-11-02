@@ -5,6 +5,10 @@ import { opById, groups, defaultPageIndex } from '../data/index.js';
 import { mountViz, hasViz, vizTitles } from '../viz/param-viz.js';
 import { droHtml, droTicker } from './machine.js';
 import { markVisited, opProgress, bestScore } from './progress.js';
+import { statusIn, opDiff, BASE_VERSION } from '../data/versions.js';
+import { vnotes, vhistory } from './vnotes.js';
+
+
 
 const keyOf = (...p) => p.join('/');
 
@@ -39,17 +43,20 @@ export function render(r) {
   const shotImg = (name, alt, cls = 'shot') =>
     html`<button type="button" class="${cls}" data-zoom="img/mc2025/${name}.png" aria-label="Enlarge screenshot: ${alt}"><img src="img/mc2025/${name}.png" alt="${alt}" loading="lazy"></button>`;
 
+  const V = version;
   const param = (p) => {
     const k = keyOf(op.id, page.id, p.id);
+    const st = statusIn({ op: op.id, page: page.id, param: p.id }, V);
+    const notesV = vnotes(st, V);
     const saved = !!bookmarks[k];
     let side = '';
     if (p.viz && hasViz(p.viz)) {
       if (!shownViz.has(p.viz)) { shownViz.add(p.viz); side = html`<div class="param-viz" data-viz="${p.viz}"></div>`; }
       else side = html`<a class="viz-ref" href="#/op/${op.id}/${page.id}/${firstWithViz(page, p.viz)}">See the visual “${vizTitles[p.viz]}” above</a>`;
     }
-    const shot = p.shot ? html`<figure class="param-shot">${shotImg(p.shot, `${p.name} in the Mastercam 2025 dialog`)}<figcaption>In the Mastercam 2025 dialog</figcaption></figure>` : '';
+    const shot = p.shot ? html`<figure class="param-shot">${shotImg(p.shot, `${p.name} in the Mastercam 2025 dialog`)}<figcaption>In the Mastercam 2025 dialog${V !== '2025' ? ` (yours, ${V}, may differ)` : ''}</figcaption></figure>` : '';
     const nMist = p.mistakes?.length || 0;
-    return html`<article class="param ${side && !String(side).includes('viz-ref') ? 'has-viz' : ''}" id="p-${p.id}" data-param="${p.id}">
+    return html`<article class="param ${side && !String(side).includes('viz-ref') ? 'has-viz' : ''} ${st.missing || st.gone ? 'v-missing' : ''}" id="p-${p.id}" data-param="${p.id}">
       <div class="param-text">
         <div class="param-top">
           <div class="titles">
@@ -61,12 +68,14 @@ export function render(r) {
             <button class="icon-btn" type="button" data-copy="#/op/${op.id}/${page.id}/${p.id}" aria-label="${t('copyLink')}" title="${t('copyLink')}">${raw(ui.link)}</button>
           </div>
         </div>
+        ${notesV}
         <p class="what">${p.what}</p>
         ${p.when ? html`<p class="when">${p.when}</p>` : ''}
         ${values(p)}
-        ${nMist || p.gcode || p.tip
+        ${nMist || p.gcode || p.tip || st.all.length
           ? html`<details class="more">
-              <summary>${nMist ? html`<span class="warn-dot" aria-hidden="true"></span>${nMist} common mistake${nMist > 1 ? 's' : ''}` : 'More'}${p.gcode ? ' · G-code' : ''}${p.tip ? ' · Formula' : ''}</summary>
+              <summary>${nMist ? html`<span class="warn-dot" aria-hidden="true"></span>${nMist} common mistake${nMist > 1 ? 's' : ''}` : 'More'}${p.gcode ? ' · G-code' : ''}${p.tip ? ' · Formula' : ''}${st.all.length ? ' · History' : ''}</summary>
+              ${vhistory(st)}
               ${p.tip ? html`<p class="tip">${p.tip}</p>` : ''}
               ${nMist ? html`<ul class="mistakes" aria-label="${t('mistakes')}">${p.mistakes.map((m) => html`<li>${m}</li>`)}</ul>` : ''}
               ${p.gcode ? html`<p class="gcode-note">G-code: <code>${p.gcode}</code></p>` : ''}
@@ -122,22 +131,24 @@ export function render(r) {
             <div class="avoid"><h3>${t('avoid')}</h3><ul>${op.avoid.map((u) => html`<li>${u}</li>`)}</ul></div>
           </div>
           <p class="chain-note"><strong>${t('chaining')}:</strong> ${op.chaining}</p>
+          ${versionBox(op, V)}
         </div>
       </div>
 
       <nav class="page-tabs" aria-label="Parameter pages">
         <span class="tabs-op">${nm(op)}</span>
-        ${op.pages.map((p) => html`<a href="#/op/${op.id}/${p.id}" ${p.id === page.id ? raw('aria-current="page"') : ''}>${nm(p)}${p.isNew ? ' ●' : ''}</a>`)}
+        ${op.pages.map((p) => { const ps = statusIn({ op: op.id, page: p.id }, V); return html`<a href="#/op/${op.id}/${p.id}" class="${ps.missing ? 'v-missing' : ''}" ${p.id === page.id ? raw('aria-current="page"') : ''} ${ps.missing ? raw(`title="Not in Mastercam ${V}: added in ${ps.missing.v}"`) : ''}>${nm(p)}${ps.missing ? html`<span class="v-tag">${ps.missing.v}+</span>` : p.isNew ? ' ●' : ''}</a>`; })}
       </nav>
 
       <div class="page-body">
         <div class="page-intro ${page.shot ? 'with-shot' : ''}">
           <div>
             <h2>${nm(page)} ${page.isNew ? html`<span class="pill new">${t('newIn')} ${page.isNew}</span>` : ''}</h2>
+            ${vnotes(statusIn({ op: op.id, page: page.id }, V), V)}
             ${page.intro ? html`<p>${page.intro}</p>` : ''}
             ${op.checked && page.shot ? html`<p class="checked-note">${raw(ui.check)} Field names checked against Mastercam 2025</p>` : ''}
           </div>
-          ${page.shot ? html`<figure class="page-shot">${shotImg(page.shot, `${page.name} page in Mastercam 2025`)}<figcaption>This page in Mastercam 2025 · tap to enlarge</figcaption></figure>` : ''}
+          ${page.shot ? html`<figure class="page-shot">${shotImg(page.shot, `${page.name} page in Mastercam 2025`)}<figcaption>This page in Mastercam 2025${V !== '2025' ? ` (yours, ${V}, may differ)` : ''} · tap to enlarge</figcaption></figure>` : ''}
         </div>
         <div class="params">${page.params.map(param)}</div>
         <div class="verify-bar">
@@ -244,6 +255,18 @@ export function render(r) {
       return () => cleanups.forEach((f) => f());
     },
   };
+}
+
+function versionBox(op, V) {
+  const diff = opDiff(op.id, V);
+  if (V === BASE_VERSION) return html`<p class="vbox-ok">Written for Mastercam 2025. <a href="#/versions">Using another version?</a></p>`;
+  if (!diff.length) return html`<p class="vbox-ok">No known differences on this toolpath between Mastercam ${V} and 2025. <a href="#/versions">All versions</a></p>`;
+  const newer = +V > +BASE_VERSION;
+  const link = (c) => (c.page && op.pages.some((p) => p.id === c.page) ? `#/op/${op.id}/${c.page}${c.param ? '/' + c.param : ''}` : '');
+  return html`<details class="vbox" ${diff.length <= 3 ? raw('open') : ''}>
+    <summary><span class="v-tag">${V}</span> ${diff.length} difference${diff.length > 1 ? 's' : ''} from this guide (written for 2025)</summary>
+    <ul>${diff.map((c) => { const l = link(c); return html`<li><span class="vhist-v">${c.v}</span>${newer ? '' : html`<b>${c.type === 'added' ? 'Not in yours: ' : c.type === 'changed' ? 'Different in yours: ' : 'Came later: '}</b>`}${l ? html`<a href="${l}">${c.text}</a>` : c.text}</li>`; })}</ul>
+  </details>`;
 }
 
 function pagerLinks(op, page) {

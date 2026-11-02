@@ -85,6 +85,7 @@ export default {
         },
         {
           id: 'optimize-comp',
+          viz: 'optimize-comp',
           name: 'Optimize cutter comp in control',
           fr: 'Optimiser la correction dans la CN',
           what: 'With Control comp, removes tiny moves the control cannot offset, which prevents interference alarms.',
@@ -137,6 +138,7 @@ export default {
         },
         {
           id: 'oscillate',
+          viz: 'oscillate',
           name: 'Oscillate — Linear / High speed',
           fr: 'Oscillation — Linéaire / Grande vitesse',
           what: 'The tool moves up and down while it travels along the wall (Maximum depth, Distance along contour).',

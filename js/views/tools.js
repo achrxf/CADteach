@@ -18,6 +18,7 @@ export function render(r) {
         <a href="#/glossary"><h3>${t('glossary')}</h3><p>EN / FR shop vocabulary.</p></a>
         <a href="#/quiz"><h3>Test yourself</h3><p>Quizzes on every toolpath: problems at the machine, picking the toolpath, the fields.</p></a>
         <a href="#/cad"><h3>Design (CAD)</h3><p>Every ribbon tab explained, with the real panels.</p></a>
+        <a href="#/versions"><h3>Versions 2018–2026</h3><p>What changed in each Mastercam release, and what is different in yours.</p></a>
         <a href="#/saved"><h3>${t('saved')}</h3><p>Your bookmarks and notes, with export and import.</p></a>
       </div>`,
   };

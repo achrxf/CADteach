@@ -4,13 +4,10 @@ import { facing, slot } from './ops/facing-slot.js';
 import { dynamicMill, dynamicContour, peelMill, areaMill } from './ops/dynamic.js';
 import { drill, circleMill, helixBore, threadMill } from './ops/holes.js';
 
-// Versions are a first-class part of the data model. Today only 2025 has content.
-// To add a version: add it here, then give an operation/page/param a
-// `versions: { '2026': { ...overrides } }` block or `since`/`until` fields.
-export const versions = [
-  { id: '2025', name: 'Mastercam 2025', status: 'content' },
-  { id: '2026', name: 'Mastercam 2026', status: 'planned' },
-];
+// Content is written against Mastercam 2025. Differences in 2018–2026 live in versions.js
+// and are shown on each page when another version is picked.
+import { versionList } from './versions.js';
+export const versions = versionList.map((v) => ({ id: v.id, name: 'Mastercam ' + v.id, status: 'content' }));
 
 export const products = [
   { id: 'mill-2d', name: '2D Mill', status: 'content' },

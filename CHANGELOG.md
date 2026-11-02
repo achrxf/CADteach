@@ -2,6 +2,17 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.7.0 — 2026-11-02
+
+Mastercam 2018 to 2026, and an interactive drawing for everything.
+
+- Version picker now covers 2018–2026. Pick yours and every toolpath and CAD page marks what is not in your version, what sat or worked differently, and what came later; each field has a version history. A new Versions page has a timeline you can scrub, a "which version has what" matrix and a from → to upgrade list. 73 changes, written in our own words from Mastercam's What's New documents (sources listed on the page; items from short summaries are marked "to check")
+- Every one of the 379 toolpath fields and all 108 CAD functions now has an interactive visual: 37 new toolpath visuals (tool and offsets, speeds and feeds, coolant, plunge/retract, spindle direction, subprograms, oscillate, gouge check, tabs, skip pockets, hole picking, dwell, thread allowance and leads…) and 62 new CAD visuals (Z depth, levels, AutoCursor, solids, model prep, surfaces, meshes, analyze, managers, stock setup, post…)
+- Drag across any drawing to change its main value, or tap it to step through the options
+- Practice drawings and feature tables are linked: point at a feature or a row and both light up
+- New field: Maximum engagement (Dynamic Mill and Facing, 2024+)
+- Corrections: Break Through moved to the Linking page in 2024, not 2025
+
 ## 1.6.0 — 2026-11-02
 
 Reference pass: everything checked again, more visuals, real 3D models, and practice parts that are harder for the right reasons.

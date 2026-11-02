@@ -33,6 +33,7 @@ const chainOptions = {
     },
     {
       id: 'entry-chain',
+      viz: 'entry-chain',
       name: 'Entry chain / Open chain extension to stock',
       fr: 'Chaîne d’entrée / Extension vers le brut',
       what: 'Entry chain: a point or chain where the tool must enter (e.g. a pre-drilled hole). Open chain extension: how an open chain is closed against the stock.',
@@ -78,6 +79,7 @@ const microLift = {
 
 const keepDown = {
   id: 'keep-down',
+  viz: 'dyn-keep-down',
   name: 'Keep tool down within — Distance / % of tool diameter',
   fr: 'Garder l’outil en bas dans',
   what: 'Moves shorter than this stay down with micro lift; longer moves lift and rapid (default 100% of Ø).',
@@ -99,12 +101,24 @@ const direction = {
 
 const approach = {
   id: 'approach',
+  viz: 'first-pass',
   name: 'Approach distance / First pass — Offset / Feed',
   fr: 'Distance d’approche / Première passe',
   what: 'Approach: how far outside the stock the tool starts when coming from outside. First pass: makes the first cut around saw-cut stock lighter and slower.',
   when: 'Use first pass offset on saw-cut or uneven stock.',
   typical: 'Approach 0, first pass 0',
   mistakes: [],
+};
+
+const maxEngagement = {
+  id: 'max-engagement',
+  name: 'Maximum engagement',
+  fr: 'Engagement maximal',
+  what: 'Reaches the full stepover as quickly as possible when the tool comes into the material, so more of the cut makes full-size chips instead of thin slivers. Added in 2024.',
+  when: 'Roughing where many short entries leave thin chips and rubbing (corners, small regions).',
+  typical: 'Off (check against your tool maker\'s engagement limits)',
+  mistakes: ['Turning it on with a stepover already at the tool\'s limit: the tool now sees that load on every entry.'],
+  viz: 'max-engagement',
 };
 
 const stock = {
@@ -137,6 +151,7 @@ const stockPage = {
     },
     {
       id: 'rest-adjust',
+      viz: 'rest-adjust',
       name: 'Adjustments to remaining stock',
       fr: 'Ajustements de la matière restante',
       what: 'Use as computed, or grow/shrink the rest areas by a distance.',
@@ -206,6 +221,7 @@ const entryMotion = {
     },
     {
       id: 'entry-feeds',
+      viz: 'feed-override',
       name: 'Entry feeds / speeds',
       fr: 'Avances / vitesses d’entrée',
       what: 'Separate ramp feed and spindle speed for the helix, which has more engagement than the dynamic cut.',
@@ -215,6 +231,7 @@ const entryMotion = {
     },
     {
       id: 'skip-pockets',
+      viz: 'skip-pockets',
       name: 'Skip pockets — All / Smaller than',
       fr: 'Ignorer les poches',
       what: 'Skips closed areas too small to enter.',
@@ -246,6 +263,7 @@ const finishPasses = {
     },
     {
       id: 'finish-overrides',
+      viz: 'feed-override',
       name: 'Feed rate override / Spindle speed override',
       fr: 'Correction d’avance / de vitesse',
       isNew: '2025',
@@ -311,7 +329,7 @@ export const dynamicMill = {
       fr: 'Paramètres de coupe',
       intro: 'Engagement and motion — the core of dynamic milling.',
       shot: 'dynamic-cut',
-      params: [direction, stepover, minRadius, microLift, keepDown, approach, stock],
+      params: [direction, stepover, minRadius, microLift, keepDown, approach, maxEngagement, stock],
     },
     cornerPretreatment,
     dynDepth,

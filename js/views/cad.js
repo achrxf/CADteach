@@ -1,5 +1,7 @@
 // Design (CAD): the Mastercam ribbon tabs explained, command by command.
-import { html, raw } from '../util.js';
+import { html, raw, store } from '../util.js';
+import { statusIn } from '../data/versions.js';
+import { vnotes, vhistory } from './vnotes.js';
 import { cadTabs, cadTabById, drawWalkthrough } from '../data/cad.js';
 import { partById } from '../data/practice.js';
 import { mountViz, hasViz } from '../viz/param-viz.js';
@@ -66,21 +68,25 @@ export function render(r) {
   const tab = cadTabById[tabId];
   if (!tab) return { title: 'Not found', html: html`<p class="empty">No CAD page called “${tabId}”. <a href="#/cad">Design (CAD)</a></p>` };
   const shown = new Set();
+  const V = store.get('version', '2025');
+  const vst = (c) => statusIn({ cad: c.id }, V);
   const cmd = (c) => {
+    const st = vst(c);
     const viz = c.viz && hasViz(c.viz) && !shown.has(c.viz) ? (shown.add(c.viz), html`<div class="param-viz" data-viz="${c.viz}"></div>`) : '';
-    return html`<article class="param ${viz ? 'has-viz' : ''}" id="c-${c.id}">
+    return html`<article class="param ${viz ? 'has-viz' : ''} ${st.missing ? 'v-missing' : ''}" id="c-${c.id}">
       <div class="param-text">
         <div class="param-top"><div class="titles"><h3>${c.name}</h3></div></div>
+        ${vnotes(st, V)}
         <p class="what">${c.what}</p>
         ${c.when ? html`<p class="when">${c.when}</p>` : ''}
         ${c.tip ? html`<p class="tip">${c.tip}</p>` : ''}
-        ${c.mistakes?.length ? html`<details class="more"><summary><span class="warn-dot" aria-hidden="true"></span>${c.mistakes.length} common mistake${c.mistakes.length > 1 ? 's' : ''}</summary><ul class="mistakes">${c.mistakes.map((m) => html`<li>${m}</li>`)}</ul></details>` : ''}
-        ${c.shot ? html`<figure class="param-shot cad-shot">${shot(c.shot, `${c.name} panel in Mastercam 2025`)}<figcaption>The ${c.name.split(' /')[0]} panel in Mastercam 2025</figcaption></figure>` : ''}
+        ${c.mistakes?.length || st.all.length ? html`<details class="more"><summary>${c.mistakes?.length ? html`<span class="warn-dot" aria-hidden="true"></span>${c.mistakes.length} common mistake${c.mistakes.length > 1 ? 's' : ''}` : 'More'}${st.all.length ? ' · History' : ''}</summary>${vhistory(st)}${c.mistakes?.length ? html`<ul class="mistakes">${c.mistakes.map((m) => html`<li>${m}</li>`)}</ul>` : ''}</details>` : ''}
+        ${c.shot ? html`<figure class="param-shot cad-shot">${shot(c.shot, `${c.name} panel in Mastercam 2025`)}<figcaption>The ${c.name.split(' /')[0]} panel in Mastercam 2025${V !== '2025' ? ` (yours, ${V}, may differ)` : ''}</figcaption></figure>` : ''}
       </div>
       ${viz}
     </article>`;
   };
-  const minor = (c) => html`<li id="c-${c.id}"><strong>${c.name}</strong> ${c.what}${c.tip ? html` <span class="muted">${c.tip}</span>` : ''}</li>`;
+  const minor = (c) => { const st = vst(c); return html`<li id="c-${c.id}" class="${st.missing ? 'v-missing' : ''}"><strong>${c.name}</strong> ${c.what}${c.tip ? html` <span class="muted">${c.tip}</span>` : ''}${vnotes(st, V, { short: true })}</li>`; };
   return {
     title: `${tab.name} — Design (CAD)`,
     html: html`
@@ -98,7 +104,7 @@ export function render(r) {
       </nav>
       <div class="page-body">
         ${tab.groups.map((g) => {
-          const keys = g.cmds.filter((c) => c.key), rest = g.cmds.filter((c) => !c.key);
+          const keys = g.cmds.filter((c) => c.key || c.viz), rest = g.cmds.filter((c) => !c.key && !c.viz);
           return html`<section class="cad-group">
             <h2 class="cad-group-title">${g.name}</h2>
             ${keys.length ? html`<div class="params">${keys.map(cmd)}</div>` : ''}

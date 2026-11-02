@@ -32,6 +32,16 @@ export const facing = {
           viz: 'facing',
         },
         {
+          id: 'max-engagement',
+          name: 'Maximum engagement (Dynamic style)',
+          fr: 'Engagement maximal',
+          what: 'With the Dynamic cutting method: gets to the full stepover as fast as it can on each entry, for more full-size chips. Added in 2024.',
+          when: 'Dynamic facing of large plates in steel or titanium.',
+          typical: 'Off',
+          mistakes: [],
+          viz: 'max-engagement',
+        },
+        {
           id: 'overlaps',
           name: 'Across overlap / Along overlap',
           fr: 'Recouvrement latéral / longitudinal',
@@ -43,6 +53,7 @@ export const facing = {
         },
         {
           id: 'approach',
+          viz: 'face-approach',
           name: 'Approach distance / Exit distance',
           fr: 'Distance d’approche / de sortie',
           what: 'Extra straight move before entering and after leaving, in % of tool Ø (default 50%).',
@@ -62,6 +73,7 @@ export const facing = {
         },
         {
           id: 'method',
+          viz: 'face-method',
           name: 'Method — Climb / Conventional, Reverse direction of last pass',
           fr: 'Sens — En avalant / En opposition',
           what: 'Direction of the passes. Reverse direction of last pass (on by default) makes the last pass climb as well.',
@@ -71,6 +83,7 @@ export const facing = {
         },
         {
           id: 'roughing-angle',
+          viz: 'pass-angle',
           name: 'Auto angle / Roughing angle',
           fr: 'Angle automatique / Angle d’ébauche',
           what: 'Direction of the passes. Auto angle picks the longest side of the stock.',

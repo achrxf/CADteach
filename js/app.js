@@ -11,9 +11,10 @@ import * as misc from './views/misc.js';
 import * as quiz from './views/quiz.js';
 import * as practice from './views/practice.js';
 import * as cad from './views/cad.js';
+import * as versionsView from './views/versions.js';
 import { cadTabs } from './data/cad.js';
 
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.7.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -34,7 +35,7 @@ function parse() {
 }
 
 const routes = {
-  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz, practice, cad,
+  '': home, learn: home, op: opView, fix, tools, glossary: misc, saved: misc, about: misc, quiz, practice, cad, versions: versionsView,
 };
 
 let cleanup = () => {};
@@ -161,6 +162,7 @@ function renderNav(r) {
       <a href="#/tools/gcode" ${cur(top === 'tools' && opId === 'gcode')}>${raw(ui.gcode)}${t('gcode')}</a>
       <a href="#/practice" ${cur(top === 'practice')}>${raw(ui.part)}Practice parts</a>
       <a href="#/cad" ${cur(top === 'cad')}>${raw(ui.book)}Design (CAD)</a>
+      <a href="#/versions" ${cur(top === 'versions')}>${raw(ui.versions)}Versions 2018–2026</a>
       <a href="#/quiz" ${cur(top === 'quiz')}>${raw(ui.check)}Test yourself</a>
       <a href="#/glossary" ${cur(top === 'glossary')}>${raw(ui.book)}${t('glossary')}</a>
       <a href="#/saved" ${cur(top === 'saved')}>${raw(ui.saved)}${t('saved')}</a>
@@ -211,7 +213,10 @@ function bind() {
   document.addEventListener('change', (e) => {
     if (e.target.matches('#ver-side, #ver-top')) {
       store.set('version', e.target.value);
-      toast(`${e.target.selectedOptions[0].textContent}`);
+      document.querySelectorAll('#ver-side, #ver-top').forEach((s) => { s.value = e.target.value; });
+      toast(`Mastercam ${e.target.value}${e.target.value === '2025' ? '' : ' — differences from 2025 are marked'}`);
+      lastKey = '';
+      render();
     }
   });
   document.addEventListener('keydown', (e) => {

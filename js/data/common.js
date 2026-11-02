@@ -68,7 +68,7 @@ export const linking = {
       id: 'break-through',
       name: 'Break Through',
       fr: 'Débouchage',
-      what: 'Sends the tool below Depth by the Amount so a through cut comes out clean. In 2025 it sits on the Linking page, not on its own page.',
+      what: 'Sends the tool below Depth by the Amount so a through cut comes out clean. Since 2024 it sits on the main Linking page; before 2024 it had its own page.',
       when: 'Cut-outs and through walls. Amount must be bigger than the corner radius of the tool.',
       typical: '0.5–1 mm + tool corner radius',
       mistakes: ['Not checking what is under the part: the tool cuts into the vice or the parallel.', 'Amount smaller than the corner radius: a thin flash stays at the bottom.'],
@@ -127,6 +127,7 @@ export const depthCuts = {
     },
     {
       id: 'depth-direction',
+      viz: 'depth-direction',
       name: 'Depth cut direction — Stepdown / Stepup',
       fr: 'Sens — Descendant / Montant',
       what: 'Stepdown cuts from the top down (normal). Stepup starts at the bottom — only for undercut tools like lollipops and T-slot cutters.',
@@ -146,6 +147,7 @@ export const depthCuts = {
     },
     {
       id: 'subprogram',
+      viz: 'subprogram',
       name: 'Subprogram — Absolute / Incremental',
       fr: 'Sous-programme',
       what: 'Posts one level as a subprogram and calls it for each depth (M98/M99) instead of repeating the code.',
@@ -207,6 +209,7 @@ export const leadInOut = {
     },
     {
       id: 'gouge-check',
+      viz: 'gouge-check',
       name: 'Gouge check',
       fr: 'Contrôle de talonnage',
       what: 'Shortens or removes a lead move that would cut into the part.',
@@ -216,6 +219,7 @@ export const leadInOut = {
     },
     {
       id: 'ramp-helix-height',
+      viz: 'lead-ramp',
       name: 'Ramp height / Helix height',
       fr: 'Hauteur de rampe / d’hélice',
       what: 'Makes the line (ramp) or the arc (helix) descend in Z while it moves in.',
@@ -225,6 +229,7 @@ export const leadInOut = {
     },
     {
       id: 'first-depth-only',
+      viz: 'lead-ramp',
       name: 'Enter on first depth cut only / Exit on last depth cut only',
       fr: 'Entrée seulement sur la 1re passe',
       what: 'Uses the lead only on the first (or last) level. Other levels just step down.',
@@ -295,6 +300,7 @@ export const multiPasses = {
     },
     {
       id: 'multi-order',
+      viz: 'multi-order',
       name: 'Multi pass order — By contour / By pass, Rough pass cut direction',
       fr: 'Ordre — Par contour / Par passe',
       what: 'Which comes first with several chains, and whether rough passes go One way or Zigzag.',
@@ -304,6 +310,7 @@ export const multiPasses = {
     },
     {
       id: 'finish-after-all',
+      viz: 'multi-order',
       name: 'Machine finish passes after roughing all contours',
       fr: 'Finition après ébauche de tous les contours',
       what: 'Roughs every chain first, then finishes them all.',
@@ -354,6 +361,7 @@ export const tabs = {
     },
     {
       id: 'small-shapes',
+      viz: 'tab-small',
       name: 'Create tabs on shapes less than / Tab all',
       fr: 'Attaches sur formes plus petites que',
       what: 'Puts tabs only on shapes smaller than a size, or on all shapes.',
@@ -373,6 +381,7 @@ export const tabCutoff = {
   params: [
     {
       id: 'cutoff',
+      viz: 'tab-cutoff',
       name: 'Cutoff Operation — After all chains / After each chain / Separate operation',
       fr: 'Coupe — Après tous / Après chaque / Opération séparée',
       what: 'When the tabs are cut. Separate operation lets you stop the machine and add support first.',
@@ -392,6 +401,7 @@ export const toolPage = {
   params: [
     {
       id: 'tool-number',
+      viz: 'tool-offsets',
       name: 'Tool # / Length offset / Diameter offset',
       fr: 'N° outil / Jauge / Correcteur',
       what: 'T, H and D numbers posted to the machine.',
@@ -402,6 +412,7 @@ export const toolPage = {
     },
     {
       id: 'speeds-feeds',
+      viz: 'speeds-calc',
       name: 'Feed rate / FPT / Spindle speed / CS',
       fr: 'Avance / Avance par dent / Vitesse / Vc',
       what: 'Feed and RPM, with FPT (feed per tooth) and CS (cutting speed) linked to them.',
@@ -411,6 +422,7 @@ export const toolPage = {
     },
     {
       id: 'plunge-retract',
+      viz: 'plunge-retract',
       name: 'Plunge rate / Retract rate / Rapid retract',
       fr: 'Avance plongée / retrait / Retrait rapide',
       what: 'Feeds for Z moves. Rapid retract (on by default) retracts at G0.',
@@ -420,6 +432,7 @@ export const toolPage = {
     },
     {
       id: 'spindle-direction',
+      viz: 'spindle-dir',
       name: 'Spindle direction',
       fr: 'Sens de rotation',
       what: 'CW (M03) for normal tools, CCW (M04) for left-hand tools and left-hand taps.',
@@ -438,6 +451,7 @@ export const coolant = {
   params: [
     {
       id: 'coolant',
+      viz: 'coolant',
       name: 'Flood / Mist / Thru-tool / Air',
       fr: 'Arrosage / Brouillard / Centre outil / Air',
       what: 'Coolant codes posted before and after the operation.',

@@ -54,6 +54,7 @@ export const drill = {
       params: [
         {
           id: 'select',
+          viz: 'hole-select',
           name: 'Features — click / double-click / Ctrl+click',
           fr: 'Sélection des trous',
           what: 'Click adds one hole segment, double-click the whole hole, Ctrl adds all similar holes on the body. Points and arc centers work too.',
@@ -105,6 +106,7 @@ export const drill = {
         },
         {
           id: 'dwell',
+          viz: 'dwell',
           name: 'Dwell',
           fr: 'Temporisation',
           what: 'Pause at the bottom of the hole (P word, G82).',
@@ -153,6 +155,7 @@ export const circleMill = {
       params: [
         {
           id: 'circle-diameter',
+          viz: 'circle-dia',
           name: 'Circle diameter / Override geometry diameter',
           fr: 'Diamètre du cercle',
           what: 'Hole diameter when you select points (default 25). With arcs, tick Override to use a different size than the arc.',
@@ -279,6 +282,7 @@ export const helixBore = {
       params: [
         {
           id: 'diameter',
+          viz: 'circle-dia',
           name: 'Circle diameter / Start angle',
           fr: 'Diamètre / Angle de départ',
           what: 'Hole size when you select points, and where the helix starts on the circle (default 90°).',
@@ -328,6 +332,7 @@ export const helixBore = {
         },
         {
           id: 'final-feed',
+          viz: 'helix-final',
           name: 'Feedrate at final depth',
           fr: 'Avance à la profondeur finale',
           what: 'Feed for the flat cleanup turn at the bottom, as % of feed (default 30%).',
@@ -337,6 +342,7 @@ export const helixBore = {
         },
         {
           id: 'finish',
+          viz: 'helix-finish',
           name: 'Finish — Method / Pitch / Stepover / Feed and speed %',
           fr: 'Finition — Méthode / Pas',
           what: 'A second, fine helix for the wall (e.g. Helix upwards), with its own feed and speed in % of the roughing values.',
@@ -415,6 +421,7 @@ export const threadMill = {
         },
         {
           id: 'allowance',
+          viz: 'thread-allow',
           name: 'Allowance (overcut) / Thread start angle / Taper angle',
           fr: 'Surcoupe / Angle de départ / Conicité',
           what: 'Extra radial cut to open the thread, where the thread starts around the circle, and a taper for pipe threads (NPT).',
@@ -464,6 +471,7 @@ export const threadMill = {
         },
         {
           id: 'gradual',
+          viz: 'thread-gradual',
           name: 'Gradual — Engagement percentage',
           fr: 'Progressif — % d\u2019engagement',
           what: 'Builds the engagement gradually over the first turn (tool-maker style entry).',
@@ -473,6 +481,7 @@ export const threadMill = {
         },
         {
           id: 'plunge-first',
+          viz: 'thread-start',
           name: 'Start at center / Plunge after first move / End at center / Retract before last move',
           fr: 'Départ au centre / Plonger après le 1er mouvement',
           what: 'Start at center (default) for ID threads. Plunge after first move and Retract before last move (new in 2025) position outside the material first — for OD threads on bosses.',

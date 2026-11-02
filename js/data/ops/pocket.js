@@ -43,6 +43,7 @@ export default {
         },
         {
           id: 'additional-finish',
+          viz: 'add-finish',
           name: 'Create additional finish operation',
           fr: 'Créer une opération de finition',
           what: 'Adds a separate contour finish operation for the walls after the pocket.',
@@ -111,6 +112,7 @@ export default {
         },
         {
           id: 'spiral-inside',
+          viz: 'spiral-in',
           name: 'Spiral inside to outside / Minimize tool burial',
           fr: 'Spirale de l’intérieur vers l’extérieur',
           what: 'Spiral inside to outside starts in the middle and works out to the walls. Minimize tool burial adds moves where the tool would be buried.',
@@ -120,6 +122,7 @@ export default {
         },
         {
           id: 'roughing-angle',
+          viz: 'pass-angle',
           name: 'Roughing angle',
           fr: 'Angle d’ébauche',
           what: 'Direction of Zigzag and One Way passes.',
@@ -178,6 +181,7 @@ export default {
         },
         {
           id: 'entry-direction',
+          viz: 'helix-dir',
           name: 'Direction CW / CCW, Entry feed rate',
           fr: 'Sens / Avance d’entrée',
           what: 'Turning direction of the helix, and whether it runs at plunge rate (default) or feed rate.',
@@ -226,6 +230,7 @@ export default {
         },
         {
           id: 'after-all',
+          viz: 'multi-order',
           name: 'Machine finish passes after roughing all pockets',
           fr: 'Finition après ébauche de toutes les poches',
           what: 'Roughs every pocket first, then finishes them.',
@@ -235,6 +240,7 @@ export default {
         },
         {
           id: 'finish-outer',
+          viz: 'finish-outer',
           name: 'Finish outer boundary',
           fr: 'Finir le contour extérieur',
           what: 'Off = only islands get finish passes.',

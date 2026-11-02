@@ -4,7 +4,11 @@
 export function addExtraSpecs(specs, h) {
   const { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch } = h;
   const before = new Set(Object.keys(specs));
-  const note = (s) => tx(W - 10, H - 10, s, 'v-label', 'end');
+  const note = (s) => {
+    if (s.length <= 66) return tx(W - 10, H - 10, s, 'v-label', 'end');
+    let i = s.lastIndexOf(' ', Math.ceil(s.length / 2) + 6); if (i < 10) i = s.indexOf(' ', s.length / 2);
+    return tx(W - 10, H - 24, s.slice(0, i), 'v-label', 'end') + tx(W - 10, H - 10, s.slice(i + 1), 'v-label', 'end');
+  };
   const view = (s) => tx(W - 10, 16, s, 'v-label', 'end');
 
   // Keep tool down: between depth levels, retract or stay down
@@ -282,6 +286,30 @@ export function addExtraSpecs(specs, h) {
       if (o === 'corner') s += pa('M104,24 A40,40 0 0 1 104,64', 'v-feed') + ci(104, 64, 4, 'c-pt') + tx(112, 40, 'entry in the corner: a mark where it shows most', 'v-label-bad');
       if (o === 'plunge') s += pa('M210,0 V24', 'v-rapid') + pa('M150,24 H210', 'v-rapid') + pa('M210,24 A40,40 0 0 1 210,64', 'v-feed') + tx(218, 20, 'move over in XY first, then plunge', 'v-label');
       return s + note({ mid: 'Default for closed contours: no lead in a corner', corner: 'Midpoint off: the lead lands where the chain starts', plunge: 'Plunge after first move: keeps the plunge away from a clamp or the part' }[o]);
+    },
+  };
+
+  // Maximum engagement (2024): how fast the tool reaches its full stepover on entry
+  specs['max-engagement'] = {
+    title: 'Maximum engagement',
+    controls: [
+      { type: 'seg', key: 'm', label: 'Maximum engagement', options: [['off', 'Off'], ['on', 'On']] },
+      { type: 'range', key: 'so', label: 'Stepover', min: 5, max: 40, step: 1, unit: '% Ø' },
+    ],
+    init: { m: 'on', so: 15 },
+    draw({ m, so }) {
+      let s = view('Engagement along one entry into the material');
+      const x0 = 50, x1 = 390, yb = 190, yt = 60, full = yb - (so / 40) * (yb - yt);
+      s += ln(x0, yb, x1, yb, 'c-ref') + ln(x0, yt - 10, x0, yb, 'c-ref');
+      s += tx(x0 - 6, full + 4, `${so}%`, 'v-label', 'end') + tx(x1, yb + 16, 'distance along the cut →', 'v-label', 'end');
+      s += ln(x0, full, x1, full, 'c-dim');
+      const ramp = m === 'on' ? 40 : 190;
+      const pts = [];
+      for (let x = x0; x <= x1; x += 4) { const t = Math.min(1, (x - x0) / ramp); pts.push([x, yb - (yb - full) * (m === 'on' ? Math.sin((t * Math.PI) / 2) : t * t)]); }
+      s += pa(`M${x0},${yb} ` + pts.map(([x, y]) => `L${x},${y}`).join(' ') + ` L${x1},${yb}Z`, 'v-sweep') + pl(pts, 'v-feed');
+      const thin = m === 'on' ? ramp : ramp * 0.8;
+      s += rc(x0, yb + 4, thin, 6, 'v-label-bad-fill') + tx(x0 + thin / 2, yb + 26, 'thin chips', 'v-label-bad', 'middle');
+      return s + note(m === 'on' ? 'Full stepover almost at once: mostly full-size chips' : 'Engagement builds up slowly: a long stretch of thin chips that rub');
     },
   };
 

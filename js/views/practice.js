@@ -59,7 +59,7 @@ export function drawing(part, { small = false } = {}) {
     for (let k = 0; k < 12 && placed.some(([px, py]) => Math.hypot(px - x, py - y) < 2.2 * R); k++) { x += 2.4 * R * Math.cos(k * 1.3); y += 2.4 * R * Math.sin(k * 1.3); }
     x = Math.min(Math.max(x, bb[0] + R), bb[2] - R); y = Math.min(Math.max(y, bb[1] + R), bb[3] - R);
     placed.push([x, y]);
-    return `<g class="dw-tag"><circle cx="${fmt(x)}" cy="${fmt(-y)}" r="${fmt(R)}"/><text x="${fmt(x)}" y="${fmt(-y + R * 0.38)}" style="font-size:${fmt(R * 1.05)}px">${f.id}</text></g>`;
+    return `<g class="dw-tag" data-f="${f.id}"><circle cx="${fmt(x)}" cy="${fmt(-y)}" r="${fmt(R)}"/><text x="${fmt(x)}" y="${fmt(-y + R * 0.38)}" style="font-size:${fmt(R * 1.05)}px">${f.id}</text></g>`;
   };
   const dim = small ? '' : `
     <g class="dw-dim" style="font-size:${fmt(fs * 1.15)}px">
@@ -71,7 +71,7 @@ export function drawing(part, { small = false } = {}) {
     </g>`;
   return `<svg class="drawing" viewBox="${vb.map(fmt).join(' ')}" role="img" aria-label="Top view of ${part.name}">
     <defs><clipPath id="${id}"><rect x="${bb[0]}" y="${-bb[3]}" width="${bw}" height="${bh}"/></clipPath></defs>
-    <g clip-path="url(#${id})">${paths.map((p) => `<path d="${p.d}" class="${p.layer === 'BLANK' ? 'dw-blank' : 'dw-geo'}"/>`).join('')}</g>
+    <g clip-path="url(#${id})">${paths.map((p) => `<path d="${p.d}" class="${p.layer === 'BLANK' ? 'dw-blank' : 'dw-geo'}"${p.layer === 'BLANK' ? '' : ` data-f="${p.layer.split('_')[0]}"`}/>`).join('')}</g>
     ${dim}${ordinates}
     ${shownFeats(part).filter((f) => f.geo).map(bubble).join('')}
   </svg>`;
@@ -161,10 +161,10 @@ export function render(r) {
       <div class="part-layout">
         <section>
           <h2 class="section-title">Drawing</h2>
-          <figure class="drawing-wrap">${raw(drawing(part))}<figcaption>Top view, mm. Numbers along the top and left edges are X and Y positions from the work zero (X0 Y0 at the centre, Z0 on the finished top). Depths are in the table.</figcaption></figure>
+          <figure class="drawing-wrap">${raw(drawing(part))}<figcaption>Top view, mm. Point at a feature or a table row to light up both. Numbers along the top and left edges are X and Y positions from the work zero (X0 Y0 at the centre, Z0 on the finished top). Depths are in the table.</figcaption></figure>
           <div class="table-wrap"><table class="feat-table">
             <thead><tr><th></th><th>Feature</th><th>Size</th><th>Position X, Y</th><th>Depth</th><th>Toolpath</th></tr></thead>
-            <tbody>${feats.map((f) => html`<tr><td><span class="tag">${f.id === 'face' ? '—' : f.id}</span></td><td>${f.name}</td><td>${f.size || ''}</td><td class="pos">${posText(f, part)}</td><td class="pos">${depthText(f)}</td><td><a href="#/op/${f.op}" data-group="${groupOf(f.op)}" class="op-chip">${nm(opById[f.op])}</a></td></tr>`)}</tbody>
+            <tbody>${feats.map((f) => html`<tr data-f="${f.id}" tabindex="0"><td><span class="tag">${f.id === 'face' ? '—' : f.id}</span></td><td>${f.name}</td><td>${f.size || ''}</td><td class="pos">${posText(f, part)}</td><td class="pos">${depthText(f)}</td><td><a href="#/op/${f.op}" data-group="${groupOf(f.op)}" class="op-chip">${nm(opById[f.op])}</a></td></tr>`)}</tbody>
           </table></div>
         </section>
         <aside class="job-facts">
@@ -207,6 +207,19 @@ export function render(r) {
       let viewer = null, cancelled = false;
       import('../viz/part3d.js').then((m) => m.mountPart(stage, part)).then((v) => { if (cancelled) v.dispose(); else viewer = v; })
         .catch(() => { stage.innerHTML = '<p class="empty">3D preview needs WebGL.</p>'; });
+      // link the feature table and the drawing: hover or tap either one to light up the other
+      const light = (fid, scroll) => {
+        root.querySelectorAll('[data-f].hl').forEach((e) => e.classList.remove('hl'));
+        if (!fid) return;
+        root.querySelectorAll(`[data-f="${CSS.escape(fid)}"]`).forEach((e) => e.classList.add('hl'));
+        if (scroll) root.querySelector(`tr[data-f="${CSS.escape(fid)}"]`)?.scrollIntoView({ block: 'nearest' });
+      };
+      const dw = root.querySelector('.drawing-wrap .drawing'), tb = root.querySelector('.feat-table');
+      dw?.addEventListener('pointerover', (e) => { const f = e.target.closest('[data-f]'); if (f) light(f.dataset.f); });
+      dw?.addEventListener('click', (e) => { const f = e.target.closest('[data-f]'); light(f?.dataset.f, true); });
+      tb?.addEventListener('pointerover', (e) => { const r = e.target.closest('tr[data-f]'); if (r) light(r.dataset.f); });
+      tb?.addEventListener('focusin', (e) => { const r = e.target.closest('tr[data-f]'); if (r) light(r.dataset.f); });
+      tb?.addEventListener('click', (e) => { const r = e.target.closest('tr[data-f]'); if (r && !e.target.closest('a')) light(r.dataset.f); });
       const save = (name, text, type) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([text], { type }));

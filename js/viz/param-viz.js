@@ -8,6 +8,8 @@ import { esc, fmt } from '../util.js';
 import { addSpecs } from './specs-more.js';
 import { addCadSpecs } from './specs-cad.js';
 import { addExtraSpecs } from './specs-extra.js';
+import { addParamSpecs2 } from './specs-params2.js';
+import { addCadSpecs2 } from './specs-cad2.js';
 
 const W = 420;
 const H = 250;
@@ -850,14 +852,20 @@ specs['break-through'] = {
 addSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch, fmt, TOOL_D });
 addCadSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead });
 addExtraSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
+addParamSpecs2(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
+addCadSpecs2(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
 
-export const vizTitles = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
-export const hasViz = (k) => !!specs[k];
+const vizTitles0 = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
+export const vizTitles = new Proxy(vizTitles0, { get: (o, k) => o[String(k).split('?')[0]] });
+export const hasViz = (k) => !!specs[String(k).split('?')[0]];
 
-export function mountViz(kind, el) {
+// kind may carry a preset: 'cad-arc?t=a3' opens the Arc 3 Points option
+export function mountViz(kindFull, el) {
+  const [kind, preset] = String(kindFull).split('?');
   const spec = specs[kind];
   if (!spec) { el.innerHTML = ''; return () => {}; }
   const state = { ...spec.init };
+  if (preset) for (const [k, v] of new URLSearchParams(preset)) { const c = spec.controls.find((x) => x.key === k); if (c) state[k] = c.type === 'range' ? +v : v; }
   let stop = () => {};
   const controlsHtml = spec.controls
     .map((c) => {
@@ -868,7 +876,15 @@ export function mountViz(kind, el) {
         .join('')}</div></div>`;
     })
     .join('');
-  el.innerHTML = `<figure class="viz" style="margin:0"><div class="viz-head"><h4>${esc(spec.title)}</h4></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title)}"></svg><div class="viz-controls">${controlsHtml}</div><figcaption class="viz-caption" aria-live="polite"></figcaption></figure>`;
+  // Direct manipulation: drag across the drawing to change the main slider (and, with a mouse,
+  // drag up/down for the second one); with only buttons, tap the drawing to step through the options.
+  const ranges = spec.controls.filter((c) => c.type === 'range' && !c.noDrag);
+  const segs = spec.controls.filter((c) => c.type !== 'range');
+  const dragX = spec.dragX ? spec.controls.find((c) => c.key === spec.dragX) : ranges[0];
+  const dragY = spec.dragY ? spec.controls.find((c) => c.key === spec.dragY) : ranges[1];
+  const tapSeg = !dragX && segs[0];
+  const hint = dragX ? `Drag the drawing ← → to change ${dragX.label.toLowerCase()}${dragY ? ` (↑ ↓ ${dragY.label.toLowerCase()} with a mouse)` : ''}` : tapSeg ? `Tap the drawing to switch ${tapSeg.label.toLowerCase()}` : '';
+  el.innerHTML = `<figure class="viz" style="margin:0"><div class="viz-head"><h4>${esc(spec.title)}</h4>${hint ? `<span class="viz-hint" aria-hidden="true">${dragX ? '⇔ drag the drawing' : 'tap the drawing'}</span>` : ''}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title)}${hint ? '. ' + esc(hint) : ''}" class="${dragX ? 'drag-x' : tapSeg ? 'tap-seg' : ''}" ${hint ? `title="${esc(hint)}"` : ''}></svg><div class="viz-controls">${controlsHtml}</div><figcaption class="viz-caption" aria-live="polite"></figcaption></figure>`;
   const svg = el.querySelector('svg');
   const cap = el.querySelector('figcaption');
   const update = () => {
@@ -893,6 +909,39 @@ export function mountViz(kind, el) {
     const b = e.target.closest('button[data-val]');
     if (b) { state[b.dataset.key] = b.dataset.val; update(); }
   }, { signal: ac.signal });
+  // pointer handling on the drawing
+  const snap = (c, v) => { v = Math.min(c.max, Math.max(c.min, v)); v = Math.round((v - c.min) / c.step) * c.step + c.min; return +v.toFixed(6); };
+  const setKey = (c, v) => {
+    if (state[c.key] === v) return;
+    state[c.key] = v;
+    const inp = el.querySelector(`input[data-key="${c.key}"]`); if (inp) inp.value = v;
+    update();
+  };
+  let drag = null;
+  svg.addEventListener('pointerdown', (e) => {
+    if (!dragX && !tapSeg) return;
+    drag = { x: e.clientX, y: e.clientY, vx: dragX ? state[dragX.key] : 0, vy: dragY ? state[dragY.key] : 0, moved: false, w: svg.getBoundingClientRect().width, h: svg.getBoundingClientRect().height, touch: e.pointerType !== 'mouse' };
+    if (dragX) svg.setPointerCapture(e.pointerId);
+  }, { signal: ac.signal });
+  svg.addEventListener('pointermove', (e) => {
+    if (!drag || !dragX) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    svg.classList.add('dragging');
+    setKey(dragX, snap(dragX, drag.vx + (dx / drag.w) * (dragX.max - dragX.min) * 1.1));
+    if (dragY && !drag.touch) setKey(dragY, snap(dragY, drag.vy - (dy / drag.h) * (dragY.max - dragY.min) * 1.1));
+  }, { signal: ac.signal });
+  const end = () => {
+    if (drag && !drag.moved && tapSeg) {
+      const opts = tapSeg.options.map((o) => o[0]);
+      state[tapSeg.key] = opts[(opts.indexOf(state[tapSeg.key]) + 1) % opts.length];
+      update();
+    }
+    drag = null; svg.classList.remove('dragging');
+  };
+  svg.addEventListener('pointerup', end, { signal: ac.signal });
+  svg.addEventListener('pointercancel', () => { drag = null; svg.classList.remove('dragging'); }, { signal: ac.signal });
   update();
   return () => { stop(); ac.abort(); };
 }

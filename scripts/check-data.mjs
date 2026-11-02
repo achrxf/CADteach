@@ -62,6 +62,28 @@ for (const t of cadTabs) {
   }
 }
 for (const s of drawWalkthrough.steps) if (!cadTabById[s.tab]?.groups.some((g) => g.cmds.some((c) => c.id === s.cmd))) err(`walkthrough: bad link ${s.tab}/${s.cmd}`);
+// version changes must point at things that exist
+const { changes, versionIds } = await import('../js/data/versions.js');
+const cadIds = new Set(cadTabs.flatMap((t) => t.groups.flatMap((g) => g.cmds.map((c) => c.id))));
+for (const c of changes) {
+  const tag = `version ${c.v} "${c.text.slice(0, 40)}"`;
+  if (!versionIds.includes(c.v)) err(`${tag}: unknown version`);
+  if (!['added', 'changed', 'removed', 'info'].includes(c.type)) err(`${tag}: bad type`);
+  if (c.type === 'changed' && !c.before) err(`${tag}: changed needs before`);
+  if (c.cad) { if (!cadIds.has(c.cad)) err(`${tag}: unknown CAD ${c.cad}`); continue; }
+  if (!c.op) continue;
+  const ops = c.op === '*' ? operations.map((o) => o.id) : [].concat(c.op);
+  let hit = 0;
+  for (const id of ops) {
+    const o = opById[id]; if (!o) { err(`${tag}: unknown op ${id}`); continue; }
+    if (!c.page) { hit++; continue; }
+    const pg = o.pages.find((x) => x.id === c.page); if (!pg) { if (c.op !== '*') err(`${tag}: ${id} has no page ${c.page}`); continue; }
+    if (c.param && !pg.params.some((x) => x.id === c.param)) { if (c.op !== '*') err(`${tag}: ${id}/${c.page} has no param ${c.param}`); continue; }
+    hit++;
+  }
+  if (!hit) err(`${tag}: matches nothing`);
+}
+console.log(`${changes.length} version changes 2018–2026`);
 console.log(`${parts.length} practice parts, ${cadCmds} CAD functions`);
 console.log(`${operations.length} operations, ${params} parameters, ${symptoms.length} symptoms`);
 if (errors) { console.error(`${errors} problem(s)`); process.exit(1); } else console.log('✓ content checks passed');
