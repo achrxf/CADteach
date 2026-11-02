@@ -3,6 +3,8 @@ import { html, raw } from '../util.js';
 import { nm } from '../i18n.js';
 import { opById, operations } from '../data/index.js';
 import { saveScore, bestScore } from './progress.js';
+import { symptoms } from '../data/reference.js';
+import { parts } from '../data/practice.js';
 
 const N = 8;
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -28,18 +30,50 @@ function build(op) {
     return [...vals];
   };
   const qs = [];
-  const kinds = ['name', 'what', 'page'];
+  const findParam = (pageId, paramId) => {
+    const pg = op.pages.find((x) => x.id === pageId);
+    const p = pg?.params.find((x) => x.id === paramId);
+    return p ? { p, pg } : null;
+  };
+  // 1) Shop situations: a problem at the machine → which field of this toolpath to check.
+  const sits = [];
+  for (const sy of symptoms) for (const c of sy.causes) for (const l of c.links || []) {
+    if (l[0] !== op.id || !l[2]) continue;
+    const it = findParam(l[1], l[2]);
+    if (it) sits.push({ sy, c, it });
+  }
+  const usedSy = new Set();
+  for (const x of shuffle(sits)) {
+    if (qs.length >= 3) break;
+    if (usedSy.has(x.sy.id)) continue;
+    const linked = new Set(x.sy.causes.flatMap((c) => (c.links || []).filter((l) => l[0] === op.id).map((l) => l[2])));
+    const wrong = shuffle(items.filter((i) => !linked.has(i.p.id) && i.p.name !== x.it.p.name)).slice(0, 3).map((i) => i.p.name);
+    if (wrong.length < 3) continue;
+    usedSy.add(x.sy.id);
+    qs.push({ kind: 'situation', prompt: `At the machine: “${x.sy.name}”. Which ${op.name} field would you check?`, answer: x.it.p.name, options: shuffle([x.it.p.name, ...wrong]), it: x.it, explain: x.c.text });
+  }
+  // 2) Which toolpath for this feature (from the practice parts).
+  const all = parts.flatMap((pt) => pt.features.filter((f) => f.size && !f.hidden && f.kind !== 'note' && f.kind !== 'face').map((f) => ({ f, pt })));
+  const mine = shuffle(all.filter((x) => x.f.op === op.id))[0], theirs = shuffle(all.filter((x) => x.f.op !== op.id))[0];
+  for (const x of shuffle([mine, theirs].filter(Boolean))) {
+    const { f, pt } = x, right = opById[f.op].name;
+    const wrong = shuffle(operations.filter((o) => o.id !== f.op)).slice(0, 3).map((o) => o.name);
+    qs.push({ kind: 'choose', prompt: `A job card asks for: ${f.name}, ${f.size}, in ${pt.material.split(',')[0]}. Which toolpath does the suggested plan use?`, answer: right, options: shuffle([right, ...wrong]), href: `#/practice/${pt.id}`, hrefLabel: `See the ${pt.name} job`, explain: `That is feature ${f.id} of the ${pt.name} practice part. Other toolpaths could work too: see the plan for why this one was chosen.` });
+  }
+  // 3) Then fields: describe it → name, and name → what it does.
+  const kinds = ['name', 'what', 'name', 'what', 'page'];
   for (const [i, it] of shuffle(items).entries()) {
     if (qs.length === N) break;
-    const kind = kinds[i % 3];
+    const kind = kinds[i % kinds.length];
     const { p, pg } = it;
+    if (qs.some((q) => q.it?.p.name === p.name)) continue;
     if (kind === 'name') {
-      // Describe the field (name hidden), pick its name.
       // Hide the name and each part of it ("Finish passes — Final depth / All depths").
-      const parts = [p.name, ...p.name.split(/\s*(?:—|\/|,|\(|\))\s*/)].map((x) => x.trim()).filter((x) => x.length > 3).sort((a, b) => b.length - a.length);
+      const pieces = [p.name, ...p.name.split(/\s*(?:—|\/|,|\(|\))\s*/)].map((x) => x.trim()).filter((x) => x.length > 3).sort((a, b) => b.length - a.length);
       let masked = first(p.what);
-      for (const x of parts) masked = masked.replace(new RegExp(esc(x), 'gi'), 'this setting');
-      masked = masked.replace(/^this setting/, 'This setting');
+      for (const x of pieces) masked = masked.replace(new RegExp(esc(x), 'gi'), 'this setting');
+      masked = masked.replace(/\b(a|an|the) this setting/gi, 'this setting').replace(/(this setting\W+){2,}/gi, 'this setting ').replace(/^this setting/, 'This setting');
+      if ((masked.match(/this setting/gi) || []).length > 2) continue;
       const wrong = pick(p.name, 3, (x) => x.p.name);
       if (wrong.length < 3) continue;
       qs.push({ prompt: 'Which field does this?', quote: masked, answer: p.name, options: shuffle([p.name, ...wrong]), it });
@@ -64,7 +98,7 @@ export function render(r) {
   if (!op) {
     return {
       title: 'Test yourself',
-      html: html`<h1 class="page-title">Test yourself</h1><p class="lede">Pick a toolpath. Eight questions, built from its fields.</p>
+      html: html`<h1 class="page-title">Test yourself</h1><p class="lede">Pick a toolpath. Eight questions: problems at the machine, choosing the right toolpath for a job, and what the fields do.</p>
         <div class="quiz-pick">${operations.map((o) => { const b = bestScore(o.id); return html`<a href="#/quiz/${o.id}" data-group="${o.group}"><strong>${nm(o)}</strong>${b ? html`<span class="quiz-badge ${b.score === b.of ? 'perfect' : ''}">best ${b.score}/${b.of}</span>` : html`<span class="muted">Not tried</span>`}</a>`; })}</div>`,
     };
   }
@@ -103,11 +137,17 @@ export function render(r) {
           else if (n === k) b.classList.add('wrong');
         });
         const fb = box.querySelector('.quiz-feedback');
-        const { p, pg } = q.it;
         fb.hidden = false;
-        fb.innerHTML = String(html`<p><strong>${q.ok ? 'Right.' : 'Not quite.'}</strong> ${p.name} (${pg.name}): ${first(p.what)}</p>
-          <div class="quiz-nav"><a href="#/op/${op.id}/${pg.id}/${p.id}">Read about it</a>
-          <button class="btn" type="button" data-next>${i + 1 < qs.length ? 'Next question' : 'See my score'}</button></div>`);
+        if (q.it) {
+          const { p, pg } = q.it;
+          fb.innerHTML = String(html`<p><strong>${q.ok ? 'Right.' : 'Not quite.'}</strong> ${q.explain ? html`${q.explain} ` : ''}<span class="muted">${p.name} (${pg.name}): ${first(p.what)}</span></p>
+            <div class="quiz-nav"><a href="#/op/${op.id}/${pg.id}/${p.id}">Read about it</a>
+            <button class="btn" type="button" data-next>${i + 1 < qs.length ? 'Next question' : 'See my score'}</button></div>`);
+        } else {
+          fb.innerHTML = String(html`<p><strong>${q.ok ? 'Right.' : 'Not quite.'}</strong> ${q.explain}</p>
+            <div class="quiz-nav"><a href="${q.href}">${q.hrefLabel}</a>
+            <button class="btn" type="button" data-next>${i + 1 < qs.length ? 'Next question' : 'See my score'}</button></div>`);
+        }
         box.querySelector('.quiz-steps').outerHTML = String(progress());
         fb.querySelector('[data-next]').focus({ preventScroll: true });
       };
@@ -130,7 +170,7 @@ export function render(r) {
               <div class="quiz-nav"><button class="btn btn-cycle" type="button" data-again><span class="cycle-dot" aria-hidden="true"></span>Try again</button><a class="btn ghost" href="#/op/${op.id}">Back to ${nm(op)}</a></div>
             </div>
           </div>
-          ${missed.length ? html`<h2 class="quiz-missed-title">Review what you missed</h2><ul class="quiz-missed">${missed.map((q) => html`<li><a href="#/op/${op.id}/${q.it.pg.id}/${q.it.p.id}">${q.it.p.name}</a> <span class="muted">· ${q.it.pg.name}</span></li>`)}</ul>` : ''}`);
+          ${missed.length ? html`<h2 class="quiz-missed-title">Review what you missed</h2><ul class="quiz-missed">${missed.map((q) => q.it ? html`<li><a href="#/op/${op.id}/${q.it.pg.id}/${q.it.p.id}">${q.it.p.name}</a> <span class="muted">· ${q.it.pg.name}</span></li>` : html`<li><a href="${q.href}">${q.hrefLabel}</a> <span class="muted">· choosing the toolpath</span></li>`)}</ul>` : ''}`);
         if (f >= 0.75 && !matchMedia('(prefers-reduced-motion: reduce)').matches) chips(box.querySelector('.quiz-score'));
       };
       const onClick = (e) => {
@@ -153,7 +193,7 @@ export function render(r) {
 }
 
 // Little metal chips flying off the score, like a good finishing pass.
-function chips(el) {
+export function chips(el) {
   const wrap = document.createElement('div');
   wrap.className = 'chips';
   wrap.setAttribute('aria-hidden', 'true');

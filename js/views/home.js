@@ -49,6 +49,12 @@ export function render() {
         </div>
       </section>
 
+      <div class="doors">
+        <a href="#/op/contour" data-group="standard"><strong>Learn the toolpaths</strong><span>${operations.length} toolpaths, page by page as in the dialog</span></a>
+        <a href="#/practice" data-group="dynamic"><strong>Practice parts</strong><span>${parts.length} jobs with drawings, 3D setups and a target time</span></a>
+        <a href="#/cad" data-group="holes"><strong>Design (CAD)</strong><span>Draw in Mastercam: every ribbon tab explained</span></a>
+      </div>
+
       ${recent.length
         ? html`<h2 class="section-title">Continue</h2>
           <div class="strip">${recent.map((o) => html`<a href="#/op/${o.id}" data-group="${o.group}"><h3>${nm(o)}</h3><p>${o.summary}</p></a>`)}</div>`

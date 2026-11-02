@@ -16,6 +16,9 @@ export function render(r) {
         <a href="#/tools/gcode"><h3>${t('gcode')}</h3><p>Paste posted code and read what every line does, with warnings for risky blocks.</p></a>
         <a href="#/fix"><h3>${t('fix')}</h3><p>Symptom → cause → parameter.</p></a>
         <a href="#/glossary"><h3>${t('glossary')}</h3><p>EN / FR shop vocabulary.</p></a>
+        <a href="#/quiz"><h3>Test yourself</h3><p>Quizzes on every toolpath: problems at the machine, picking the toolpath, the fields.</p></a>
+        <a href="#/cad"><h3>Design (CAD)</h3><p>Every ribbon tab explained, with the real panels.</p></a>
+        <a href="#/saved"><h3>${t('saved')}</h3><p>Your bookmarks and notes, with export and import.</p></a>
       </div>`,
   };
 }

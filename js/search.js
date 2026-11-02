@@ -25,7 +25,7 @@ function build() {
   for (const tab of cadTabs) {
     items.push({ kind: 'Design (CAD)', title: tab.name + (tab.guide ? '' : ' tab'), alt: '', text: tab.intro, href: `#/cad/${tab.id}`, w: 2 });
     for (const g of tab.groups) for (const c of g.cmds)
-      items.push({ kind: `${tab.name} › ${g.name}`, title: c.name, alt: '', text: [c.what, c.when, c.tip, ...(c.mistakes || [])].join(' '), snip: c.what, href: `#/cad/${tab.id}/${c.id}`, w: c.key ? 2 : 1.5 });
+      items.push({ kind: `${tab.name} › ${g.name}`, title: c.name, alt: '', text: [c.what, c.when, c.tip, ...(c.mistakes || [])].join(' '), snip: c.what, href: `#/cad/${tab.id}/${c.id}`, w: c.key ? 2.6 : 1.6 });
   }
   for (const p of parts) items.push({ kind: 'Practice part', title: p.name, alt: '', text: p.brief.story + ' ' + p.ops.join(' '), snip: p.brief.story, href: `#/practice/${p.id}`, w: 1.8 });
   for (const s of symptoms) items.push({ kind: 'Problem', title: s.name, alt: s.fr, text: s.causes.map((c) => c.text).join(' '), snip: s.causes[0].text, href: `#/fix/${s.id}`, w: 2.5 });
@@ -72,7 +72,14 @@ export function search(q, limit = 30) {
     }
     if (ok) out.push({ ...it, score: score * it.w });
   }
-  return out.sort((a, b) => b.score - a.score).slice(0, limit);
+  // Shared pages (Linking, Depth Cuts…) appear in many toolpaths: show each field once.
+  const seen = new Map();
+  for (const it of out.sort((a, b) => b.score - a.score)) {
+    const key = it.title + '|' + (it.snip || '');
+    if (seen.has(key)) { seen.get(key).dup = (seen.get(key).dup || 1) + 1; continue; }
+    seen.set(key, it);
+  }
+  return [...seen.values()].map((it) => (it.dup ? { ...it, kind: it.kind.split(' › ')[0] + ` (+${it.dup - 1} more toolpaths)` } : it)).slice(0, limit);
 }
 
 export function highlight(text, q, esc) {

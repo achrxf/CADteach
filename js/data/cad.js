@@ -10,7 +10,7 @@ export const cadTabs = [
       {
         name: 'Planes and work zero',
         cmds: [
-          { id: 'planes', key: true, name: 'WCS, Cplane and Tplane', viz: 'cad-planes', what: 'The WCS is your work zero and orientation. The Cplane is the plane you draw on. The Tplane is the plane the tool works in. For 3-axis vertical work, all three are usually Top.', when: 'Change the Cplane to draw on a side face; change the Tplane when you machine from the side (second setup, 4th axis). Use the Planes manager to make a plane from a face of the solid.', mistakes: ['Drawing in the wrong Cplane: the geometry lands on the wrong face and toolpaths come out sideways.', 'Machining with the WCS still at the CAD origin instead of the part zero the operator will probe.'] },
+          { id: 'planes', key: true, name: 'WCS, Cplane and Tplane (Planes manager)', viz: 'cad-planes', what: 'The WCS is your work zero and orientation. The Cplane is the plane you draw on. The Tplane is the plane the tool works in. For 3-axis vertical work, all three are usually Top.', when: 'Change the Cplane to draw on a side face; change the Tplane when you machine from the side (second setup, 4th axis). Use the Planes manager to make a plane from a face of the solid.', mistakes: ['Drawing in the wrong Cplane: the geometry lands on the wrong face and toolpaths come out sideways.', 'Machining with the WCS still at the CAD origin instead of the part zero the operator will probe.'] },
           { id: 'z-depth', name: 'Z depth (Home › Organize)', what: 'The Z value new 2D geometry is drawn at when the view is 2D. Keep it at 0 for flat profiles and let the toolpath set the depths.', mistakes: ['Geometry drawn at Z-12 by accident: the toolpath depths are then off by 12 if they are set incremental.'] },
         ],
       },
@@ -24,6 +24,12 @@ export const cadTabs = [
         name: 'Chaining',
         cmds: [
           { id: 'chaining', key: true, name: 'Wireframe Chaining dialog', viz: 'cad-chain', shot: 'chaining', what: 'Opens whenever a function needs a chain: Contour, Pocket, Offset Chains, Solid Extrude… Chain picks every connected entity in one click; the arrow shows the direction and start.', when: 'Single for one entity, Partial for an open piece, Window for many shapes at once. Reverse flips the direction (that also flips climb/conventional on a contour).', mistakes: ['A tiny gap or a duplicate line stops the chain early: use Home › Delete › Duplicates and Analyze Chain.', 'Starting point in the middle of a wall: the tool enters there and leaves a mark.'] },
+        ],
+      },
+      {
+        name: 'Coming from SolidWorks, Fusion or Inventor',
+        cmds: [
+          { id: 'from-solidworks', key: true, name: 'SolidWorks → Mastercam: what maps to what', what: 'Mastercam CAD is not parametric sketching. You draw plain wireframe on a construction plane (Cplane): no constraints and no dimensions driving the geometry. If something is wrong, you trim, delete and redraw, or use Modify and Transform.', when: 'Sketch → Wireframe on a Cplane. Extrude Boss/Cut → Solids › Extrude (Create body / Cut body / Add boss). Sketch plane / reference plane → Planes manager (new plane from a face, from geometry or by rotating). Fillet / Chamfer → Solids › Constant Fillet, or Fillet Entities in 2D. Hole Wizard → Solids › Hole. Feature tree → Solids manager (history can be edited, or removed in Model Prep). Configurations / layers → Levels. Mates / move part → Transform, Model Prep › Align.', tip: 'Native SOLIDWORKS, Parasolid, STEP and IGES files open through File › Open; after import, check the units, put the part zero where you will probe it (Move to Origin), and align the face you machine to Top.', mistakes: ['Expecting a dimension to drive the geometry: edit the number and nothing moves. Redraw or use Push-Pull on solids.', 'Working on a STEP model in the wrong plane because the CAD origin was not your part zero.'] },
         ],
       },
       {

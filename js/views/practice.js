@@ -5,6 +5,7 @@ import { nm } from '../i18n.js';
 import { opById, groups } from '../data/index.js';
 import { parts, partById, machines, levels } from '../data/practice.js';
 import { svgPaths, geoBox } from '../practice-geom.js';
+import { chips as burst } from './quiz.js';
 
 const fmt = (n) => String(+n.toFixed(2));
 const shownFeats = (p) => p.features.filter((f) => !f.hidden);
@@ -55,7 +56,7 @@ function list() {
   const card = (p, big) => html`<a class="part-card ${big ? 'big' : ''}" href="#/practice/${p.id}" data-group="${groupOf(p.ops[0])}">
       <span class="part-thumb">${raw(drawing(p, { small: true }))}</span>
       <span class="part-info">
-        ${big ? html`<span class="level level-${p.level}">${levels[p.level]}</span>` : ''}
+        
         <strong>${p.name}</strong>
         ${big ? chips(p.ops) : html`<span class="muted">${nm(opById[p.ops[0]])}</span>`}
         <span class="part-meta">${p.material.split(',')[0]} · ${p.qty || p.brief.qty} pcs · target ${p.brief.cycle} min${logs[p.id] ? html` · <b class="${logs[p.id] <= p.brief.cycle ? 'ok' : ''}">yours ${logs[p.id]} min</b>` : ''}</span>
@@ -131,8 +132,8 @@ export function render(r) {
           <h2 class="section-title">Drawing</h2>
           <figure class="drawing-wrap">${raw(drawing(part))}<figcaption>Top view, mm. Work zero X0 Y0 at the centre, Z0 on the finished top. Depths in the table.</figcaption></figure>
           <div class="table-wrap"><table class="feat-table">
-            <thead><tr><th></th><th>Feature</th><th>Size</th><th>Toolpath</th></tr></thead>
-            <tbody>${feats.map((f) => html`<tr><td><span class="tag">${f.id === 'face' ? '—' : f.id}</span></td><td>${f.name}</td><td>${f.size || ''}</td><td><a href="#/op/${f.op}" data-group="${groupOf(f.op)}" class="op-chip">${nm(opById[f.op])}</a></td></tr>`)}</tbody>
+            <thead><tr><th></th><th>Feature</th><th>Size</th><th>Position X, Y</th><th>Depth</th><th>Toolpath</th></tr></thead>
+            <tbody>${feats.map((f) => html`<tr><td><span class="tag">${f.id === 'face' ? '—' : f.id}</span></td><td>${f.name}</td><td>${f.size || ''}</td><td class="pos">${posText(f, part)}</td><td class="pos">${depthText(f)}</td><td><a href="#/op/${f.op}" data-group="${groupOf(f.op)}" class="op-chip">${nm(opById[f.op])}</a></td></tr>`)}</tbody>
           </table></div>
         </section>
         <aside class="job-facts">
@@ -164,7 +165,7 @@ export function render(r) {
         <h2 class="section-title">Your cycle time</h2>
         <p class="muted">Enter the cycle time Mastercam or Vericut gives you for the whole program.</p>
         <form data-log class="log-row">
-          <label for="cyc">Minutes</label><input id="cyc" class="input" type="number" min="0.1" step="0.1" inputmode="decimal" value="${log || ''}" placeholder="e.g. ${b.cycle + 1.5}">
+          <label for="cyc">Minutes</label><input id="cyc" class="input" type="number" min="0.1" step="any" inputmode="decimal" value="${log || ''}" placeholder="e.g. ${b.cycle + 1.5}">
           <button class="btn" type="submit">Save</button>
           <output data-verdict>${log ? verdict(log, b.cycle) : ''}</output>
         </form>
@@ -193,7 +194,9 @@ export function render(r) {
         const v = +form.querySelector('input').value;
         if (!(v > 0)) return;
         const all = store.get('cycles', {}); all[part.id] = Math.round(v * 10) / 10; store.set('cycles', all);
-        form.querySelector('[data-verdict]').innerHTML = verdict(all[part.id], b.cycle);
+        const out = form.querySelector('[data-verdict]');
+        out.innerHTML = verdict(all[part.id], b.cycle);
+        if (all[part.id] <= b.cycle && !matchMedia('(prefers-reduced-motion: reduce)').matches) { out.style.position = 'relative'; burst(out); }
       };
       root.addEventListener('click', onClick); root.addEventListener('change', onChange); form.addEventListener('submit', onSubmit);
       return () => { cancelled = true; viewer?.dispose(); root.removeEventListener('click', onClick); root.removeEventListener('change', onChange); };
@@ -201,9 +204,36 @@ export function render(r) {
   };
 }
 
+// Where each feature is, from the work zero (centre of the part, Z0 on top).
+const xy = ([x, y]) => `${fmt(x)}, ${fmt(y)}`;
+function centres(g) {
+  if (!g) return [];
+  if (g.circles) return g.circles.at;
+  if (g.circle) return [g.circle.slice(0, 2)];
+  if (g.obround) return [g.obround.slice(0, 2)];
+  if (g.rrect) return [g.rrect.slice(0, 2)];
+  if (g.poly) { const b = geoBox(g); return [[(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]]; }
+  return [];
+}
+function posText(f, part) {
+  const g = f.geo;
+  if (!g) return '—';
+  if (g.band) return g.axis === 'y' ? `Y ${fmt(g.band[0])} to ${fmt(g.band[1])}` : `X ${fmt(g.band[0])} to ${fmt(g.band[1])}`;
+  if (g.poly) return 'see DXF (corner points)';
+  const pts = part.features.filter((x) => x.name === f.name && x.op === f.op).flatMap((x) => centres(x.geo));
+  const list = pts.slice(0, 4).map(xy).join(' · ');
+  return pts.length > 4 ? `${list} … (${pts.length} in all, see DXF)` : list;
+}
+function depthText(f) {
+  if (f.kind === 'face') return 'to Z0';
+  if (f.kind === 'note') return '—';
+  if (f.kind === 'island') return `top at Z${fmt(f.top ?? 0)}`;
+  return f.z0 ? `Z${fmt(f.z0)} → Z${fmt(f.z1)}` : `Z${fmt(f.z1)}`;
+}
+
 function verdict(v, target) {
   const d = Math.round((v - target) * 10) / 10;
-  return d <= 0 ? `<span class="ok">${Math.abs(d)} min under target. Nice.</span>` : `<span class="over">${d} min over target. Look at tool changes, rapids and stepovers.</span>`;
+  return d <= 0 ? `<span class="ok">On target: ${Math.abs(d)} min under. That job would make money. The card on the parts list now shows your time.</span>` : `<span class="over">${d} min over target. Look at tool changes, rapids and stepovers.</span>`;
 }
 
 // Stand-alone drawing file with its own colours.

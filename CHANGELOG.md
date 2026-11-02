@@ -2,6 +2,21 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.5.0 — 2026-11-02
+
+More and harder practice parts, plus fixes from a 10-person tester panel (simulated users: trainee, senior programmer, instructor, SolidWorks engineer, shop owner, student, older machinist, UX designer, Fusion user, aerospace methods engineer).
+
+- 12 new complete jobs (27 practice parts in all): 3 more Beginner (Name tag, Spacer block, Clamp bar in mild steel), 2 more Intermediate (Motor mount plate, Pump cover in 316L), 3 Advanced (Gearbox side plate, Robot gripper finger, Indexing plate) and 4 Expert (Cross-drilled manifold, Mould insert with stepped islands, Lightened aerospace rib, Fixture base plate)
+- Part geometry: angled and L-shaped profiles with corner radii, round parts, rotated features, channels in X and Y, islands at different heights, toe-clamp setups in 3D; cleaner 3D edges
+- Every part's feature table now gives positions (X, Y from the work zero) and depths
+- Process corrections from the expert testers: no more slots cut with a tool the same width as the slot; 3-flute HEM tools for aluminium; Ø8 instead of Ø10 in narrow channels and R5 pockets; the aerospace rib check no longer says Verify shows deflection; boring-head fallback noted for H7 / Ra 0.8 bores; Op 2 stated where the part needs a second setup; facing pass counts corrected; "Spot D" wording clarified
+- Quizzes: new questions about problems at the machine ("Chatter on walls: which field would you check?") and choosing the toolpath for a real job feature; fixed broken masked sentences
+- Practice is in the phone bottom bar; Practice parts and Design (CAD) are on the home page and at the top of the sidebar; Saved moved to Tools
+- Larger-text button (A+) and darker grey text; dimmed screenshots in dark mode
+- Beating the target cycle time now celebrates; cycle time box accepts any decimal and Enter
+- Design (CAD): new "Coming from SolidWorks, Fusion or Inventor" map; search finds CAD terms first and shows shared fields (Feed Plane, Depth…) once instead of twelve times
+- The sidebar no longer jumps while you use it
+
 ## 1.4.0 — 2026-11-01
 
 Practice parts and the CAD side of Mastercam.

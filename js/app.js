@@ -13,7 +13,7 @@ import * as practice from './views/practice.js';
 import * as cad from './views/cad.js';
 import { cadTabs } from './data/cad.js';
 
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.5.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {
@@ -112,25 +112,35 @@ function renderShell() {
       <nav class="nav" id="nav"></nav>
       <div class="sidebar-foot">
         <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="icon-btn text-size" type="button" data-text-size aria-pressed="false" aria-label="Larger text">A+</button>
         <a class="icon-btn" href="#/about" style="margin-left:auto;text-decoration:none">v${APP_VERSION}</a>
       </div>
     </aside>
     <header class="topbar">
       <a class="brand" href="#/">${raw(ui.logo)}<span class="brand-name">CADteach</span></a>
       ${versionSelect('ver-top')}
+      <button class="icon-btn text-size" type="button" data-text-size aria-pressed="false" aria-label="Larger text">A+</button>
       <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"></button>
     </header>
     <main class="main"><div class="content" id="content" tabindex="-1"></div></main>
     <nav class="tabbar" aria-label="Main">
       <a href="#/learn" data-tab="learn">${raw(ui.learn)}<span>${t('learn')}</span></a>
+      <a href="#/practice" data-tab="practice">${raw(ui.part)}<span>Practice</span></a>
       <button type="button" data-search>${raw(ui.search)}<span>${t('search')}</span></button>
       <a href="#/fix" data-tab="fix">${raw(ui.fix)}<span>${t('fixShort')}</span></a>
       <a href="#/tools" data-tab="tools">${raw(ui.tools)}<span>${t('tools')}</span></a>
-      <a href="#/saved" data-tab="saved">${raw(ui.saved)}<span>${t('saved')}</span></a>
     </nav>
   </div>`);
   updateThemeButtons();
+  applyTextSize();
 }
+
+// Larger text for people who need it: scales every rem-based size.
+const applyTextSize = () => {
+  const big = store.get('bigText', false);
+  document.documentElement.classList.toggle('big-text', big);
+  document.querySelectorAll('[data-text-size]').forEach((b) => { b.setAttribute('aria-pressed', String(big)); b.setAttribute('aria-label', big ? 'Normal text size' : 'Larger text'); b.textContent = big ? 'A−' : 'A+'; });
+};
 
 function updateThemeButtons() {
   document.querySelectorAll('[data-theme-toggle]').forEach((b) => {
@@ -150,6 +160,7 @@ function renderNav(r) {
       <a href="#/tools/feeds" ${cur(top === 'tools' && opId === 'feeds')}>${raw(ui.calc)}${t('feeds')}</a>
       <a href="#/tools/gcode" ${cur(top === 'tools' && opId === 'gcode')}>${raw(ui.gcode)}${t('gcode')}</a>
       <a href="#/practice" ${cur(top === 'practice')}>${raw(ui.part)}Practice parts</a>
+      <a href="#/cad" ${cur(top === 'cad')}>${raw(ui.book)}Design (CAD)</a>
       <a href="#/quiz" ${cur(top === 'quiz')}>${raw(ui.check)}Test yourself</a>
       <a href="#/glossary" ${cur(top === 'glossary')}>${raw(ui.book)}${t('glossary')}</a>
       <a href="#/saved" ${cur(top === 'saved')}>${raw(ui.saved)}${t('saved')}</a>
@@ -166,10 +177,15 @@ function renderNav(r) {
       <a href="#/cad" ${cur(top === 'cad' && !opId)}><span class="op-icon">${raw(ui.part)}</span>Overview</a>
       ${cadTabs.map((t) => html`<a href="#/cad/${t.id}" ${cur(top === 'cad' && opId === t.id)}><span class="op-icon">${raw(ui.chev)}</span>${t.name}</a>`)}
     </div>`);
-  nav.querySelector('[aria-current="page"]:not(.nav-section:first-child a)')?.scrollIntoView({ block: 'nearest' });
+  // Only bring the current item into view when it is hidden, and never while the pointer is over the sidebar.
+  const curEl = nav.querySelector('[aria-current="page"]:not(.nav-section:first-child a)');
+  if (curEl && !nav.closest('.sidebar').matches(':hover')) {
+    const sb = nav.closest('.sidebar').getBoundingClientRect(), b = curEl.getBoundingClientRect();
+    if (b.top < sb.top || b.bottom > sb.bottom) curEl.scrollIntoView({ block: 'nearest' });
+  }
   document.querySelectorAll('.tabbar [data-tab]').forEach((a) => {
     const tab = a.dataset.tab;
-    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' || top === 'practice' || top === 'cad' : top === tab;
+    const on = tab === 'learn' ? !top || top === 'learn' || top === 'op' || top === 'glossary' || top === 'quiz' || top === 'cad' : tab === 'tools' ? top === 'tools' || top === 'saved' : top === tab;
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }
@@ -178,6 +194,7 @@ function renderNav(r) {
 function bind() {
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-search]')) { e.preventDefault(); openSearch(); }
+    if (e.target.closest('[data-text-size]')) { store.set('bigText', !store.get('bigText', false)); applyTextSize(); }
     if (e.target.closest('[data-theme-toggle]')) {
       theme = isDark() ? 'light' : 'dark';
       store.set('theme', theme);

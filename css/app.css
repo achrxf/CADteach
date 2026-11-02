@@ -950,3 +950,23 @@ a.op-chip:hover { text-decoration: underline; }
 .cad-shot { max-width: 380px; }
 .cad-shot .shot img { max-height: 300px; object-fit: cover; object-position: top left; }
 .level-expert { background: color-mix(in srgb, var(--g-holes) 16%, transparent); color: var(--g-holes); }
+.feat-table td.pos { font-family: var(--f-code); font-size: var(--t-xs); white-space: normal; min-width: 90px; }
+
+/* v1.5 panel fixes */
+html.big-text { font-size: 115%; }
+html.big-text .v-label, html.big-text .v-label-strong { font-size: 14px; }
+.text-size { font: 700 var(--t-sm)/1 var(--f-head); min-width: 40px; }
+:root { --ink-3: #4b5763; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .shot img, :root:not([data-theme='light']) .ribbon-shot img { filter: brightness(.86) contrast(1.05); } }
+:root[data-theme='dark'] .shot img, :root[data-theme='dark'] .ribbon-shot img { filter: brightness(.86) contrast(1.05); }
+.part-grid, .part-grid.big { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.part-grid.big { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.part-grid.big .part-card { max-width: 560px; }
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 8px; }
+.doors a { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--g); text-decoration: none; color: var(--ink); }
+.doors a:hover { background: var(--raised); }
+.doors strong { font: 600 var(--t-xl)/1.1 var(--f-head); }
+.doors span { font-size: var(--t-sm); color: var(--ink-2); }
+@media (max-width: 760px) { .doors { grid-template-columns: 1fr; } }
+.log-row .btn { background: var(--good); border-color: var(--good); }
+.doors { margin-top: 14px; }
