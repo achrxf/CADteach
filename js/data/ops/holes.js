@@ -14,7 +14,7 @@ const drillLinking = {
       typical: 'Default 10 Incremental — 2–3 on flat faced parts',
       gcode: 'R word; G99 = return to R plane',
     },
-    linking.params[3],
+    { ...linking.params[3], what: 'The Z where the hole starts. With Incremental, the Initial and R planes are measured from it; Top of Stock itself (Incremental) and Depth are measured from the hole point.', when: 'Set it right when holes start on a lower face than the chain geometry.' },
     {
       ...linking.params[4],
       what: 'Hole bottom. Default 0 Incremental from the selected point or hole. "Calculate depth from top of line/hole" uses a solid hole feature.',
@@ -63,6 +63,7 @@ export const drill = {
         },
         {
           id: 'sort',
+          viz: 'hole-sort',
           name: 'Sort — Selected order / 2D / Rotary / Cross sort',
           fr: 'Tri',
           what: 'Order the tool visits the holes: as selected, or sorted in a grid (zigzag, one way) or around a center.',
@@ -161,6 +162,7 @@ export const circleMill = {
         },
         {
           id: 'start-angle',
+          viz: 'start-angle',
           name: 'Start angle',
           fr: 'Angle de départ',
           what: 'Where on the circle the tool touches the wall first (default 90°, the top of the hole).',
@@ -373,6 +375,7 @@ export const threadMill = {
       params: [
         {
           id: 'thread-pitch',
+          viz: 'thread-profile',
           name: 'Thread pitch / Number of active teeth',
           fr: 'Pas / Nombre de dents actives',
           what: 'Z advance per turn (must match the tool) and how many teeth of the tool form the thread at once.',
@@ -402,6 +405,7 @@ export const threadMill = {
         },
         {
           id: 'diameters',
+          viz: 'thread-profile',
           name: 'Major thread diameter / Override minor diameter',
           fr: 'Diamètre majeur / mineur',
           what: 'The size the tool cuts to (major diameter for ID threads).',
@@ -430,6 +434,7 @@ export const threadMill = {
         },
         {
           id: 'tool-edge-feed',
+          viz: 'edge-feed',
           name: 'Tool Edge feed rate',
           fr: 'Avance au bord de l\u2019outil',
           isNew: '2025',

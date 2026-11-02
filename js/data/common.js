@@ -117,6 +117,7 @@ export const depthCuts = {
     },
     {
       id: 'keep-tool-down',
+      viz: 'keep-down',
       name: 'Keep tool down',
       fr: 'Garder l’outil en bas',
       what: 'Steps down to the next level without retracting.',
@@ -135,6 +136,7 @@ export const depthCuts = {
     },
     {
       id: 'tapered-walls',
+      viz: 'tapered-walls',
       name: 'Tapered walls / Taper angle',
       fr: 'Parois dépouillées / Angle',
       what: 'Moves each level in or out by the taper angle to make a drafted wall with a flat endmill. Leaves stair steps equal to the depth step.',
@@ -195,6 +197,7 @@ export const leadInOut = {
     },
     {
       id: 'midpoint',
+      viz: 'lead-options',
       name: 'Enter/exit at midpoint in closed contours',
       fr: 'Entrée/sortie au milieu des contours fermés',
       what: 'Starts the contour in the middle of the first entity instead of at its end, so the lead is not in a corner.',
@@ -231,6 +234,7 @@ export const leadInOut = {
     },
     {
       id: 'plunge-after-first',
+      viz: 'lead-options',
       name: 'Plunge after first move / Retract before last move',
       fr: 'Plonger après le 1er mouvement',
       what: 'Moves to the lead start in XY above the part first, then plunges — instead of plunging at the start point.',
@@ -340,6 +344,7 @@ export const tabs = {
     },
     {
       id: 'tab-motion',
+      viz: 'tab-motion',
       name: 'Tab Motion — Full / Partial, Vertical / Ramp moves',
       fr: 'Mouvement — Complet / Partiel, Vertical / Rampe',
       what: 'Partial tabs only exist on the last depth cuts; Full tabs run the full height. Ramp moves go over the tab at the ramp angle (default 45°).',
@@ -464,6 +469,7 @@ export const arcFilter = {
     },
     {
       id: 'arc-filtering',
+      viz: 'arc-filter',
       name: 'Line/Arc Filtering — Create arcs in XY / XZ / YZ',
       fr: 'Filtrage — Créer des arcs XY / XZ / YZ',
       what: 'Replaces chains of short lines with G2/G3 arcs within the tolerance.',
@@ -473,6 +479,7 @@ export const arcFilter = {
     },
     {
       id: 'arc-feed',
+      viz: 'edge-feed',
       name: 'Override Arc Feed Rate — Max ID decrease / OD increase',
       fr: 'Correction d’avance sur arcs',
       what: 'Slows the feed on inside arcs and speeds it on outside arcs so the edge feed stays constant.',

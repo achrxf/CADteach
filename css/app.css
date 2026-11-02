@@ -970,3 +970,33 @@ html.big-text .v-label, html.big-text .v-label-strong { font-size: 14px; }
 @media (max-width: 760px) { .doors { grid-template-columns: 1fr; } }
 .log-row .btn { background: var(--good); border-color: var(--good); }
 .doors { margin-top: 14px; }
+.dw-ord path { stroke: var(--ink-3); stroke-width: .25; vector-effect: none; }
+.dw-ord text { fill: var(--ink-2); font-family: var(--f-code); text-anchor: start; }
+.dw-ord text[transform] { text-anchor: start; }
+.dw-dim text { font-size: inherit; }
+.dw-tag text { font-size: inherit; }
+.dw-ord text:not([transform]) { text-anchor: end; }
+
+/* print: practice job card + drawing on paper */
+@media print {
+  :root { --paper: #fff; --surface: #fff; --raised: #fff; --ink: #000; --ink-2: #222; --ink-3: #444; --line: #999; --feed: #000; --rapid: #777; }
+  body { background: #fff !important; }
+  .sidebar, .topbar, .tabbar, .page-tabs, .head-actions, .stage-toggles, .screen, .cycle-log, .crumbs, .toast { display: none !important; }
+  .main { margin: 0 !important; } .content { padding: 0 !important; max-width: none !important; }
+  .machine, .part-head { background: #fff !important; color: #000 !important; border: 1px solid #000; box-shadow: none; }
+  .machine *, .machine h1 { color: #000 !important; }
+  .machine-body { grid-template-columns: 1fr !important; padding: 8px 12px !important; }
+  .counters { background: none; }
+  .part-layout { grid-template-columns: 1.4fr 1fr !important; gap: 16px; }
+  .drawing-wrap { border: 1px solid #000; break-inside: avoid; }
+  .dw-geo { stroke: #000 !important; } .dw-blank { stroke: #888 !important; }
+  .op-chip { background: none !important; color: #000 !important; border: 1px solid #999; }
+  .plan-reveal summary { display: none; }
+  .plan-reveal { border: 0; } .plan li { break-inside: avoid; }
+  h2.section-title { margin-top: 14px; }
+}
+
+/* single-op parts: first try vs the harder follow-up */
+.tier { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font: 600 11px/1.5 var(--f-body); letter-spacing: .02em; vertical-align: 2px; }
+.tier-1 { background: color-mix(in srgb, var(--feed, #1f5fd1) 12%, transparent); color: var(--feed, #1f5fd1); }
+.tier-2 { background: color-mix(in srgb, var(--rapid, #c98a12) 18%, transparent); color: var(--ink-2, #333); }

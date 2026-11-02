@@ -11,38 +11,68 @@ const fmt = (n) => String(+n.toFixed(2));
 const shownFeats = (p) => p.features.filter((f) => !f.hidden);
 const groupOf = (opId) => opById[opId]?.group;
 
-// Top-view drawing: geometry, feature letters, overall size.
+// Top-view drawing: geometry clipped to the stock, feature letters, overall size and
+// ordinate dimensions (every feature position from the work zero, like a shop print).
+let clipN = 0;
 export function drawing(part, { small = false } = {}) {
   const outside = part.features.find((f) => f.kind === 'outside');
   const bb = geoBox(part.base), ob = outside ? geoBox(outside.geo) : bb;
   const bw = bb[2] - bb[0], bh = bb[3] - bb[1];
   const pw = +(ob[2] - ob[0]).toFixed(1), ph = +(ob[3] - ob[1]).toFixed(1);
-  const m = small ? 6 : 26;
-  const vb = [bb[0] - m, -bb[3] - m, bw + 2 * m, bh + 2 * m];
+  const u = Math.max(bw, bh) / 120; // drawing unit: keeps text and bubbles the same size on any part
+  const m = small ? 6 : 30 * u, ml = small ? 6 : 40 * u;
+  const vb = [bb[0] - ml, -bb[3] - ml, bw + ml + m, bh + ml + m];
   const paths = svgPaths(part);
+  const id = 'dwclip' + ++clipN;
+  // ordinate values: centres of round features and slots, and edges of rectangular ones
+  const xs = new Set([0, +ob[0].toFixed(2), +ob[2].toFixed(2)]), ys = new Set([0, +ob[1].toFixed(2), +ob[3].toFixed(2)]);
+  for (const f of part.features) {
+    const g = f.geo; if (!g || f.kind === 'note') continue;
+    const add = (x, y) => { if (x >= bb[0] - 0.01 && x <= bb[2] + 0.01) xs.add(+x.toFixed(2)); if (y >= bb[1] - 0.01 && y <= bb[3] + 0.01) ys.add(+y.toFixed(2)); };
+    if (g.circles) g.circles.at.forEach(([x, y]) => add(x, y));
+    else if (g.circle || g.obround) add((g.circle || g.obround)[0], (g.circle || g.obround)[1]);
+    else if (g.band) g.band.forEach((v) => (g.axis === 'y' ? add(1e9, v) : add(v, 1e9)));
+    else if (g.rrect && !g.rrect[5]) { const [cx, cy, w, h] = g.rrect; add(cx - w / 2, cy - h / 2); add(cx + w / 2, cy + h / 2); }
+  }
+  const fs = 3.6 * u;
+  const ordX = [...xs].sort((a, b) => a - b), ordY = [...ys].sort((a, b) => a - b);
+  // skip labels that would overlap the previous one
+  const spaced = (vals) => { const out = []; let last = -Infinity; for (const v of vals) { if (v - last >= fs * 1.25) { out.push(v); last = v; } } return out; };
+  const ordinates = small ? '' : `<g class="dw-ord" style="font-size:${fmt(fs)}px">
+      ${spaced(ordX).map((x) => `<path d="M${x} ${-bb[3] - 2 * u}V${-bb[3] - 9 * u}"/><text x="${x}" y="${-bb[3] - 10.5 * u}" transform="rotate(-90 ${x} ${-bb[3] - 10.5 * u})">${fmt(x)}</text>`).join('')}
+      ${spaced(ordY).map((y) => `<path d="M${bb[0] - 2 * u} ${-y}H${bb[0] - 9 * u}"/><text x="${bb[0] - 10.5 * u}" y="${-y + fs * 0.35}">${fmt(y)}</text>`).join('')}
+    </g>`;
+  // bubbles, nudged apart when they would overlap
+  const placed = [];
+  const R = 4.6 * u;
   const bubble = (f) => {
     const g = f.geo; if (!g || small) return '';
     let x, y;
     if (g.band) {
-      const mid = (g.band[0] + Math.min(g.band[1], g.axis === 'y' ? bb[3] : bb[2])) / 2;
-      [x, y] = g.axis === 'y' ? [bb[2] - 10, mid] : [mid, bb[1] + 10];
-    } else if (g.circles) [x, y] = [g.circles.at[g.circles.at.length - 1][0] + 5, g.circles.at[g.circles.at.length - 1][1] + 5];
+      const lo = g.axis === 'y' ? bb[1] : bb[0], hi = g.axis === 'y' ? bb[3] : bb[2];
+      const mid = (Math.max(g.band[0], lo) + Math.min(g.band[1], hi)) / 2;
+      [x, y] = g.axis === 'y' ? [bb[2] - 12 * u, mid] : [mid, bb[1] + 12 * u];
+    } else if (g.circles) { const [px, py] = g.circles.at[g.circles.at.length - 1]; [x, y] = [px + 4 * u, py + 4 * u]; }
     else if (g.obround) [x, y] = [g.obround[0], g.obround[1]];
     else if (g.circle) { const k = f.kind === 'island' ? -0.72 : 0.72; [x, y] = [g.circle[0] + (g.circle[2] / 2) * k, g.circle[1] + (g.circle[2] / 2) * 0.72]; }
-    else { const b = geoBox(g); [x, y] = f.kind === 'outside' ? [(b[0] + b[2]) / 2, b[3]] : [(b[0] + b[2]) / 2, b[3] - 6]; }
-    return `<g class="dw-tag"><circle cx="${fmt(x)}" cy="${fmt(-y)}" r="5"/><text x="${fmt(x)}" y="${fmt(-y + 1.9)}">${f.id}</text></g>`;
+    else { const b = geoBox(g); const cb = [Math.max(b[0], bb[0]), Math.max(b[1], bb[1]), Math.min(b[2], bb[2]), Math.min(b[3], bb[3])]; [x, y] = f.kind === 'outside' ? [(cb[0] + cb[2]) / 2, cb[3]] : [(cb[0] + cb[2]) / 2, cb[3] - 6 * u]; }
+    for (let k = 0; k < 12 && placed.some(([px, py]) => Math.hypot(px - x, py - y) < 2.2 * R); k++) { x += 2.4 * R * Math.cos(k * 1.3); y += 2.4 * R * Math.sin(k * 1.3); }
+    x = Math.min(Math.max(x, bb[0] + R), bb[2] - R); y = Math.min(Math.max(y, bb[1] + R), bb[3] - R);
+    placed.push([x, y]);
+    return `<g class="dw-tag"><circle cx="${fmt(x)}" cy="${fmt(-y)}" r="${fmt(R)}"/><text x="${fmt(x)}" y="${fmt(-y + R * 0.38)}" style="font-size:${fmt(R * 1.05)}px">${f.id}</text></g>`;
   };
   const dim = small ? '' : `
-    <g class="dw-dim">
-      <path d="M${ob[0]} ${-bb[1] + 6}V${-bb[1] + m - 2}M${ob[2]} ${-bb[1] + 6}V${-bb[1] + m - 2}M${ob[0]} ${-bb[1] + m - 7}H${ob[2]}" />
-      <text x="${(ob[0] + ob[2]) / 2}" y="${-bb[1] + m - 9}">${pw}</text>
-      <path d="M${bb[2] + 6} ${-ob[3]}H${bb[2] + m - 2}M${bb[2] + 6} ${-ob[1]}H${bb[2] + m - 2}M${bb[2] + m - 7} ${-ob[3]}V${-ob[1]}" />
-      <text x="${bb[2] + m - 9}" y="${-(ob[1] + ob[3]) / 2}" transform="rotate(-90 ${bb[2] + m - 9} ${-(ob[1] + ob[3]) / 2})">${ph}</text>
-      <path class="dw-axis" d="M0 0h8M0 0v-8"/>
+    <g class="dw-dim" style="font-size:${fmt(fs * 1.15)}px">
+      <path d="M${ob[0]} ${-bb[1] + 3 * u}V${-bb[1] + m - 2 * u}M${ob[2]} ${-bb[1] + 3 * u}V${-bb[1] + m - 2 * u}M${ob[0]} ${-bb[1] + m - 7 * u}H${ob[2]}" />
+      <text x="${(ob[0] + ob[2]) / 2}" y="${-bb[1] + m - 9 * u}">${pw}</text>
+      <path d="M${bb[2] + 3 * u} ${-ob[3]}H${bb[2] + m - 2 * u}M${bb[2] + 3 * u} ${-ob[1]}H${bb[2] + m - 2 * u}M${bb[2] + m - 7 * u} ${-ob[3]}V${-ob[1]}" />
+      <text x="${bb[2] + m - 9 * u}" y="${-(ob[1] + ob[3]) / 2}" transform="rotate(-90 ${bb[2] + m - 9 * u} ${-(ob[1] + ob[3]) / 2})">${ph}</text>
+      <path class="dw-axis" d="M0 0h${fmt(8 * u)}M0 0v${fmt(-8 * u)}"/>
     </g>`;
-  return `<svg class="drawing" viewBox="${vb.join(' ')}" role="img" aria-label="Top view of ${part.name}">
-    ${paths.map((p) => `<path d="${p.d}" class="${p.layer === 'BLANK' ? 'dw-blank' : 'dw-geo'}"/>`).join('')}
-    ${dim}
+  return `<svg class="drawing" viewBox="${vb.map(fmt).join(' ')}" role="img" aria-label="Top view of ${part.name}">
+    <defs><clipPath id="${id}"><rect x="${bb[0]}" y="${-bb[3]}" width="${bw}" height="${bh}"/></clipPath></defs>
+    <g clip-path="url(#${id})">${paths.map((p) => `<path d="${p.d}" class="${p.layer === 'BLANK' ? 'dw-blank' : 'dw-geo'}"/>`).join('')}</g>
+    ${dim}${ordinates}
     ${shownFeats(part).filter((f) => f.geo).map(bubble).join('')}
   </svg>`;
 }
@@ -56,8 +86,7 @@ function list() {
   const card = (p, big) => html`<a class="part-card ${big ? 'big' : ''}" href="#/practice/${p.id}" data-group="${groupOf(p.ops[0])}">
       <span class="part-thumb">${raw(drawing(p, { small: true }))}</span>
       <span class="part-info">
-        
-        <strong>${p.name}</strong>
+        <strong>${p.name}${!big ? html` <span class="tier tier-${p.tier || 1}">${p.tier === 2 ? 'harder' : 'first'}</span>` : ''}</strong>
         ${big ? chips(p.ops) : html`<span class="muted">${nm(opById[p.ops[0]])}</span>`}
         <span class="part-meta">${p.material.split(',')[0]} · ${p.qty || p.brief.qty} pcs · target ${p.brief.cycle} min${logs[p.id] ? html` · <b class="${logs[p.id] <= p.brief.cycle ? 'ok' : ''}">yours ${logs[p.id]} min</b>` : ''}</span>
       </span>
@@ -112,8 +141,10 @@ export function render(r) {
             </dl>
             <div class="head-actions" style="margin-top:18px">
               <a class="btn btn-cycle" href="parts/${part.id}.dxf" download><span class="cycle-dot" aria-hidden="true"></span>Download DXF</a>
-              <button class="btn ghost" type="button" data-stl>3D model (STL)</button>
+              <button class="btn ghost" type="button" data-stl>Mesh (STL)</button>
+              <a class="btn ghost" href="parts/${part.id}.step" download>3D model (STEP)</a>
               <button class="btn ghost" type="button" data-svg>Drawing (SVG)</button>
+              <button class="btn ghost" type="button" data-print>Print job card</button>
             </div>
           </div>
           <div class="screen">
@@ -130,7 +161,7 @@ export function render(r) {
       <div class="part-layout">
         <section>
           <h2 class="section-title">Drawing</h2>
-          <figure class="drawing-wrap">${raw(drawing(part))}<figcaption>Top view, mm. Work zero X0 Y0 at the centre, Z0 on the finished top. Depths in the table.</figcaption></figure>
+          <figure class="drawing-wrap">${raw(drawing(part))}<figcaption>Top view, mm. Numbers along the top and left edges are X and Y positions from the work zero (X0 Y0 at the centre, Z0 on the finished top). Depths are in the table.</figcaption></figure>
           <div class="table-wrap"><table class="feat-table">
             <thead><tr><th></th><th>Feature</th><th>Size</th><th>Position X, Y</th><th>Depth</th><th>Toolpath</th></tr></thead>
             <tbody>${feats.map((f) => html`<tr><td><span class="tag">${f.id === 'face' ? '—' : f.id}</span></td><td>${f.name}</td><td>${f.size || ''}</td><td class="pos">${posText(f, part)}</td><td class="pos">${depthText(f)}</td><td><a href="#/op/${f.op}" data-group="${groupOf(f.op)}" class="op-chip">${nm(opById[f.op])}</a></td></tr>`)}</tbody>
@@ -186,6 +217,7 @@ export function render(r) {
         if (e.target.closest('[data-stl]')) { if (viewer) save(`${part.id}.stl`, viewer.stl(), 'model/stl'); else toast('The 3D model is still loading'); }
         if (e.target.closest('[data-svg]')) save(`${part.id}-drawing.svg`, drawingFile(part), 'image/svg+xml');
         if (e.target.closest('[data-home]')) viewer?.home();
+        if (e.target.closest('[data-print]')) { root.querySelector('.plan-reveal')?.setAttribute('open', ''); window.print(); }
       };
       const onChange = (e) => { const s = e.target.closest('[data-show]'); if (s) viewer?.show(s.dataset.show, s.checked); };
       const form = root.querySelector('[data-log]');

@@ -13,7 +13,7 @@ import * as practice from './views/practice.js';
 import * as cad from './views/cad.js';
 import { cadTabs } from './data/cad.js';
 
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.6.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {

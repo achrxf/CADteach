@@ -275,9 +275,10 @@ const dynDepth = {
   params: [
     depthCuts.params[0],
     depthCuts.params[1],
-    { ...depthCuts.params[2], name: 'Depth cut order — By region / By depth', what: 'By region finishes one region to full depth first; By depth cuts every region level by level.' },
+    { ...depthCuts.params[2], name: 'Depth cut order — By region / By depth', what: 'By region finishes one region to full depth first; By depth cuts every region level by level.', when: 'By depth for thin webs between regions. By region to save travel between areas.', typical: 'By region', mistakes: ['By region on a thin web between two regions: the first one goes full depth and the web flexes while the second is cut.'] },
     {
       id: 'island-facing',
+      viz: 'island-facing',
       name: 'Use island depths / Island facing',
       fr: 'Profondeurs des îlots / Surfaçage des îlots',
       what: 'Stops a depth cut at the top of each island and can face the island tops (Overlap, Stock above islands).',
@@ -354,7 +355,7 @@ export const areaMill = {
           when: 'Climb and One way for the best wall finish.',
           typical: 'Climb / One way',
           mistakes: [],
-          viz: 'comp-side',
+          viz: 'climb-conv',
         },
         {
           id: 'stepover',
@@ -527,6 +528,7 @@ export const peelMill = {
         },
         {
           id: 'single-chain',
+          viz: 'peel-align',
           name: 'Single chain only — Align Left / Center / Right, Slot width',
           fr: 'Chaîne unique — Alignement / Largeur',
           what: 'With one chain, the slot is built around it at this width (default 80 mm), aligned to the left, center or right of the chain.',

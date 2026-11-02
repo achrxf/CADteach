@@ -7,6 +7,7 @@
 import { esc, fmt } from '../util.js';
 import { addSpecs } from './specs-more.js';
 import { addCadSpecs } from './specs-cad.js';
+import { addExtraSpecs } from './specs-extra.js';
 
 const W = 420;
 const H = 250;
@@ -848,6 +849,7 @@ specs['break-through'] = {
 // ---------------------------------------------------------------------------
 addSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch, fmt, TOOL_D });
 addCadSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead });
+addExtraSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
 
 export const vizTitles = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
 export const hasViz = (k) => !!specs[k];

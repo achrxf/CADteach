@@ -1,6 +1,8 @@
 // Geometry for the practice parts: turns feature descriptions into lines/arcs/circles,
 // then into a DXF (R12, opens in Mastercam) or SVG. No browser APIs, so the build script can use it too.
 
+import pc from '../vendor/polygon-clipping.esm.js';
+
 const rad = (d) => (d * Math.PI) / 180;
 
 function rrect(cx, cy, w, h, r, layer) {
@@ -202,6 +204,7 @@ const ccw = (p) => (area(p) < 0 ? [...p].reverse() : p);
 const cw = (p) => (area(p) > 0 ? [...p].reverse() : p);
 
 export function slabs(part) {
+  // Exact 2D booleans per Z band: footprint − cuts − channels + islands − cuts inside islands.
   const H = part.H;
   const feats = part.features.flatMap(expand);
   const cuts = feats.filter((f) => f.kind === 'cut').map((f) => ({ ...f, z0: f.z0 ?? 0, poly: polyOf(f.geo) }));
@@ -210,40 +213,72 @@ export function slabs(part) {
   islands.forEach((c) => (c.bb = bbox(c.poly)));
   const outsides = feats.filter((f) => f.kind === 'outside').map((f) => ({ ...f, poly: polyOf(f.geo) }));
   const channels = feats.filter((f) => f.kind === 'channel');
+  const base = polyOf(part.base), bb = bbox(base), big = 1000;
   const zs = [...new Set([0, -H, ...cuts.flatMap((c) => [c.z0, c.z1]), ...islands.map((i) => i.top), ...outsides.map((o) => o.z1), ...channels.map((c) => c.z1)].map((z) => +z.toFixed(4)))]
     .filter((z) => z <= 0 && z >= -H).sort((a, b) => b - a);
-  const base = polyOf(part.base);
+  const ring = (p) => { const r = p.map(([x, y]) => [x, y]); r.push(r[0]); return [r]; };
   const out = [];
   for (let k = 0; k < zs.length - 1; k++) {
-    const zt = zs[k], zb = zs[k + 1];
-    const os = outsides.filter((o) => o.z1 <= zb + 1e-6);
-    let pieces = [os.length ? os[0].poly : base];
-    for (const ch of channels.filter((c) => c.z1 <= zb + 1e-6)) {
-      const [v0, v1] = ch.geo.band, k = ch.geo.axis === 'y' ? 1 : 0;
-      pieces = pieces.flatMap((p) => [clipAxis(p, v0, 'low', k), clipAxis(p, v1, 'high', k)]).filter(Boolean);
+    const zt = zs[k], zb = zs[k + 1], mid = (zt + zb) / 2;
+    let geom = [ring(base)];
+    const os = outsides.filter((o) => o.z1 < mid);
+    for (const o of os) geom = pc.intersection(geom, ring(o.poly)); // each wall limits the part above its depth
+    for (const ch of channels.filter((c) => c.z1 < mid)) {
+      const [v0, v1] = ch.geo.band;
+      const r = ch.geo.axis === 'y' ? [[-big, v0], [big, v0], [big, v1], [-big, v1]] : [[v0, -big], [v1, -big], [v1, big], [v0, big]];
+      geom = pc.difference(geom, ring(r));
     }
-    const act = cuts.filter((c) => c.z0 >= zt - 1e-6 && c.z1 <= zb + 1e-6);
-    const isl = islands.filter((i) => i.top >= zt - 1e-6 && act.some((c) => inside(i.bb, c.bb)));
-    const P = pieces.map((p) => ({ outer: ccw(p), holes: [] }));
-    const I = isl.map((i) => ({ outer: ccw(i.poly), holes: [] }));
-    for (const c of act) {
-      const center = [(c.bb[0] + c.bb[2]) / 2, (c.bb[1] + c.bb[3]) / 2];
-      const n = isl.findIndex((i) => inside(c.bb, i.bb));
-      const bigger = (o) => o !== c && inside(c.bb, o.bb) && !(inside(o.bb, c.bb) && act.indexOf(o) > act.indexOf(c));
-      if (n >= 0) {
-        // inside an island: skip if another cut inside the same island already covers it
-        if (act.some((o) => bigger(o) && inside(o.bb, isl[n].bb))) continue;
-        I[n].holes.push(cw(c.poly));
-        continue;
-      }
-      if (act.some(bigger)) continue;
-      const host = P.find((p) => pointIn(center, p.outer));
-      if (host) host.holes.push(cw(c.poly));
+    const act = cuts.filter((c) => c.z0 > mid && c.z1 < mid);
+    if (act.length) geom = pc.difference(geom, ...act.map((c) => ring(c.poly)));
+    const isl = islands.filter((i) => i.top > mid && act.some((c) => pc.intersection(ring(i.poly), ring(c.poly)).length));
+    if (isl.length) {
+      geom = pc.union(geom, ...isl.map((i) => ring(i.poly)));
+      const inner = act.filter((c) => isl.some((i) => inside(c.bb, i.bb)));
+      if (inner.length) geom = pc.difference(geom, ...inner.map((c) => ring(c.poly)));
     }
-    out.push({ zt, zb, pieces: [...P, ...I] });
+    const pieces = geom.map((poly) => ({ outer: ccw(poly[0].slice(0, -1)), holes: poly.slice(1).map((h) => cw(h.slice(0, -1))) }));
+    out.push({ zt, zb, pieces });
   }
+  void bb;
   return out;
 }
 
 // Bounding box [x0, y0, x1, y1] of one geometry (for drawings and labels).
 export const geoBox = (geo) => bbox(polyOf(geo));
+
+// Closed outline of one shape as segments in order, for the STEP builder:
+// { t: 'line', a, b } | { t: 'arc', a, m, b } (start, a point on the arc, end) | { t: 'circle', c, r }.
+export function loopOf(geo) {
+  if (geo.circle) return [{ t: 'circle', c: [geo.circle[0], geo.circle[1]], r: geo.circle[2] / 2 }];
+  if (geo.obround) {
+    const [cx, cy, len, w, a] = geo.obround, r = w / 2, h = (len - w) / 2, u = [Math.cos(rad(a)), Math.sin(rad(a))], n = [-u[1], u[0]];
+    const p = (s, t) => [cx + u[0] * s + n[0] * t, cy + u[1] * s + n[1] * t];
+    return [{ t: 'line', a: p(-h, -r), b: p(h, -r) }, { t: 'arc', a: p(h, -r), m: p(h + r, 0), b: p(h, r) }, { t: 'line', a: p(h, r), b: p(-h, r) }, { t: 'arc', a: p(-h, r), m: p(-h - r, 0), b: p(-h, -r) }];
+  }
+  let pts;
+  if (geo.rrect) {
+    const [cx, cy, w, h, r = 0, a = 0] = geo.rrect, c = Math.cos(rad(a)), s = Math.sin(rad(a));
+    pts = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map(([x, y]) => [cx + x * c - y * s, cy + x * s + y * c, r]);
+  } else pts = geo.poly;
+  const C = filletCorners(pts), out = [];
+  C.forEach((k, i) => {
+    if (k.r) {
+      let a0 = ang(k.c, k.t1), a1 = ang(k.c, k.t2);
+      if (k.left) { while (a1 < a0) a1 += 360; } else { while (a1 > a0) a1 -= 360; }
+      const am = rad((a0 + a1) / 2);
+      out.push({ t: 'arc', a: k.t1, m: [k.c[0] + k.r * Math.cos(am), k.c[1] + k.r * Math.sin(am)], b: k.t2 });
+    }
+    const nx = C[(i + 1) % C.length];
+    if (Math.hypot(nx.t1[0] - k.t2[0], nx.t1[1] - k.t2[1]) > 1e-6) out.push({ t: 'line', a: k.t2, b: nx.t1 });
+  });
+  return out;
+}
+
+// Everything the STEP builder needs, as plain JSON.
+export function solidSpec(part) {
+  const feats = part.features.flatMap(expand).filter((f) => f.geo && f.kind !== 'note' && f.kind !== 'face');
+  return {
+    id: part.id, H: part.H, base: loopOf(part.base),
+    features: feats.map((f) => ({ id: f.id, kind: f.kind, z0: f.z0 ?? 0, z1: f.z1 ?? -part.H, top: f.top ?? 0, band: f.geo.band, axis: f.geo.axis || 'x', loop: f.geo.band ? null : loopOf(f.geo), bb: f.geo.band ? null : bbox(polyOf(f.geo)) })),
+  };
+}

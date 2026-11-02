@@ -2,6 +2,19 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.6.0 — 2026-11-02
+
+Reference pass: everything checked again, more visuals, real 3D models, and practice parts that are harder for the right reasons.
+
+- 21 new practice parts (48 in all). Every toolpath now has a first part and a harder one (open pockets, T-slots, stepped walls, three floor levels, angled channels, deep holes, stepped bores, bores in steel, a thread on a boss), plus 3 more Beginner, 4 more Intermediate, 3 more Advanced and 2 more Expert jobs (thin-wall housing, titanium valve body). Harder now means tighter walls, stepped islands, mixed depths, angled features and awkward setups, not just more holes
+- A STEP model for every part (true arcs, built with CadQuery). Mastercam opens STEP directly, so this replaces a native .mcam file
+- Drawings: ordinate dimensions from the work zero, overall sizes, scaled bubbles; Print job card button
+- Part geometry engine rewritten on polygon booleans, so stepped walls, islands inside pockets and channels through walls come out right in 3D, DXF and STEP
+- 14 new parameter visuals: Keep tool down, Tapered walls, Line/arc filtering, Edge vs centre feed on arcs (Override arc feed, Tool edge feed), Tab motion, Entry fails Plunge/Skip, Thin wall, Island facing, Peel Mill single-chain alignment, Hole sort, Start angle, Thread pitch and diameters, Move between cuts, Lead-in position options
+- Corrections: Dynamic Mill depth-cut order "By region" explained properly; Area Mill direction visual; Dynamic toolpath menu paths; Drill "Top of Stock" no longer talks about depth cuts and says what Incremental is measured from
+- Practice list marks each single-toolpath part as "first" or "harder"
+- STEP files are not precached by the offline service worker (DXF still are)
+
 ## 1.5.0 — 2026-11-02
 
 More and harder practice parts, plus fixes from a 10-person tester panel (simulated users: trainee, senior programmer, instructor, SolidWorks engineer, shop owner, student, older machinist, UX designer, Fusion user, aerospace methods engineer).

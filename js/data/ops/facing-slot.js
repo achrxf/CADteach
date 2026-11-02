@@ -80,6 +80,7 @@ export const facing = {
         },
         {
           id: 'move-between',
+          viz: 'move-between',
           name: 'Move between cuts — Linear / High speed loops / Rapid',
           fr: 'Déplacement entre passes',
           what: 'How the tool turns around between zigzag passes. High speed loops keep it moving smoothly.',

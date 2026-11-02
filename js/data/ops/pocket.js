@@ -168,6 +168,7 @@ export default {
         },
         {
           id: 'if-fails',
+          viz: 'entry-fail',
           name: 'If all entry attempts fail — Plunge / Skip',
           fr: 'Si toutes les entrées échouent — Plonger / Ignorer',
           what: 'What happens where the helix and ramp do not fit. The default is Plunge.',
@@ -243,6 +244,7 @@ export default {
         },
         {
           id: 'thin-wall',
+          viz: 'thin-wall',
           name: 'Thin wall',
           fr: 'Paroi mince',
           what: 'Finishes thin walls in small steps alternating with the roughing depth cuts, so the wall is never left tall and unsupported.',
