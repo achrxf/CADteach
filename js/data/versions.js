@@ -51,7 +51,7 @@ export const changes = [
   { v: '2019', type: 'added', cad: 'align', text: 'Align to plane / face / Z tools for imported solids.' },
   { v: '2019', type: 'added', cad: 'section-view', text: 'One-click section view of the part and toolpaths.' },
   { v: '2019', type: 'info', cad: 'bounding-box', text: 'Bounding Box can be oriented to the plane, a face, automatically or by hand.' },
-  { v: '2019', type: 'info', text: 'New 2D toolpath Model Chamfer: pick solid edges, Mastercam builds the chamfer path and keeps clear of fixtures.' },
+  { v: '2019', type: 'added', op: 'model-chamfer', text: 'New 2D toolpath Model Chamfer: pick solid edges, Mastercam builds the chamfer path and keeps clear of fixtures. In 2018, chamfer solid edges with Contour (2D chamfer) on chains taken from the edges, or a 3D toolpath.', check: true },
   { v: '2019', type: 'info', text: 'Toolpath display: entry/exit, rapids and micro lifts can be shown or hidden separately.' },
 
   // ---------------------------------------------------------------- 2020
@@ -123,6 +123,7 @@ export const changes = [
   { v: '2026', type: 'info', op: '*', page: 'tool', param: 'tool-number', text: 'Mill Tool Designer: panels with Tool, Geometry, Parameters and Coolant pages replace the wizard. Holder Designer redone the same way.' },
   { v: '2026', type: 'changed', cad: 'planes', text: 'Planes Manager is a tree with groups, drag and drop, and search.', before: 'A flat list of planes.' },
   { v: '2026', type: 'changed', cad: 'levels', text: 'Levels Manager is a tree with nested groups, drag and drop and search.', before: 'A flat table of level numbers and names.' },
+  { v: '2026', type: 'info', op: ['swept-2d', 'swept-3d', 'revolved', 'lofted', 'ruled', 'coons'], text: 'The wireframe toolpaths are also offered in Mill-Turn. In Mill they work as before.' },
   { v: '2026', type: 'info', cad: 'hole', text: 'Solid Hole panel split into Geometry Selection, Hole Style and Advanced.' },
 ];
 

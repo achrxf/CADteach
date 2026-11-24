@@ -16,6 +16,13 @@ const nominal = {
   circle: { f: 900, s: 12000, t: 'T6  Ø8 end mill' },
   helix: { f: 700, s: 12000, t: 'T6  Ø8 end mill' },
   thread: { f: 500, s: 9000, t: 'T7  M10 thread mill' },
+  'model-chamfer': { f: 1200, s: 10000, t: 'T8  Ø6 90° chamfer mill' },
+  'swept-2d': { f: 2000, s: 14000, t: 'T9  Ø8 ball mill' },
+  'swept-3d': { f: 2000, s: 14000, t: 'T9  Ø8 ball mill' },
+  revolved: { f: 2200, s: 12000, t: 'T10  Ø10 ball mill' },
+  lofted: { f: 2200, s: 12000, t: 'T10  Ø10 ball mill' },
+  ruled: { f: 1800, s: 12000, t: 'T10  Ø10 ball mill' },
+  coons: { f: 2200, s: 12000, t: 'T10  Ø10 ball mill' },
 };
 
 const pad = (v) => {

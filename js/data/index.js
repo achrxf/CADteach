@@ -3,6 +3,7 @@ import pocket from './ops/pocket.js';
 import { facing, slot } from './ops/facing-slot.js';
 import { dynamicMill, dynamicContour, peelMill, areaMill } from './ops/dynamic.js';
 import { drill, circleMill, helixBore, threadMill } from './ops/holes.js';
+import { wireframeOps } from './ops/wireframe.js';
 
 // Content is written against Mastercam 2025. Differences in 2018–2026 live in versions.js
 // and are shown on each page when another version is picked.
@@ -20,9 +21,10 @@ export const groups = [
   { id: 'standard', name: 'Standard 2D', fr: '2D standard', blurb: 'The classic toolpaths: facing, walls, pockets and slots.' },
   { id: 'dynamic', name: 'Dynamic (high-speed)', fr: 'Dynamique (UGV)', blurb: 'Constant engagement, full flute depth, smooth motion.' },
   { id: 'holes', name: 'Holes & threads', fr: 'Trous et filetages', blurb: 'Drilling cycles, milled holes and thread milling.' },
+  { id: 'surface', name: '3D shapes from the 2D tab', fr: 'Formes 3D depuis l’onglet 2D', blurb: 'Model Chamfer and the wireframe toolpaths: rounds, coves, domes and freeform faces cut with a ball or a chamfer mill, no surfaces needed.' },
 ];
 
-export const operations = [facing, contour, pocket, slot, dynamicMill, dynamicContour, areaMill, peelMill, drill, circleMill, helixBore, threadMill];
+export const operations = [facing, contour, pocket, slot, dynamicMill, dynamicContour, areaMill, peelMill, drill, circleMill, helixBore, threadMill, ...wireframeOps];
 
 export const opById = Object.fromEntries(operations.map((o) => [o.id, o]));
 // The page an operation opens on: its main parameters page, not the Tool page.
@@ -44,7 +46,7 @@ export const whatsNew = {
 
 export const roadmap = [
   { v: '1.x', text: 'Report-a-mistake button on every parameter; French interface and explanations' },
-  { v: '1.x', text: 'Blend Mill, Engrave, Model Chamfer, 2D Swept, FBM Drill' },
+  { v: '1.x', text: 'Blend Mill, Engrave, FBM Drill' },
   { v: '2.0', text: 'STEP part viewer with hole/pocket recognition and machining tips' },
   { v: '2.x', text: '3D Mill toolpaths (OptiRough, Waterline, Scallop…) and Mastercam 2026 differences' },
   { v: '3.0', text: 'Arabic interface, Android/iOS app from the same code (PWA → store)' },

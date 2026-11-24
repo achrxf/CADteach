@@ -11,6 +11,7 @@ for (const t of cadTabs) for (const g of t.groups) for (const c of g.cmds) cadWh
 const matrix = [
   ['Toolpath Hole Definition panel', { v: '2019' }, '#/op/drill/hole-definition'],
   ['Solid Hole (CAD)', { v: '2019' }, '#/cad/solids/hole'],
+  ['Model Chamfer toolpath', { v: '2019' }, '#/op/model-chamfer'],
   ['Override geometry diameter (milled holes)', { v: '2020' }, '#/op/circle-mill/cut/circle-diameter'],
   ['Trim to Entities / Modify Length split', { v: '2020' }, '#/cad/wireframe/trim'],
   ['Skip pockets smaller than (Dynamic Mill)', { v: '2021' }, '#/op/dynamic-mill/entry-motion/skip-pockets'],

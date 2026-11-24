@@ -420,6 +420,7 @@ mark { background: var(--rapid-soft); color: inherit; border-radius: 2px; }
 .v-ink-faint { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
 .v-ink-fill { fill: var(--ink); }
 .v-feed { stroke: var(--feed); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.v-feed-thin { stroke: var(--feed); stroke-width: 1.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .v-feed-faint { stroke: var(--feed); stroke-width: 1.2; stroke-dasharray: 2 5; fill: none; opacity: .6; }
 .v-feed-fill { fill: var(--feed); }
 .v-feed-c { stroke: var(--feed); stroke-width: 2; fill: none; }
@@ -564,8 +565,8 @@ input[type='range'] { height: 28px; }
    Toolpath families get a colour: Standard = feed blue, Dynamic = teal, Holes = violet.
    ===================================================================== */
 :root {
-  --g-standard: #1f5fd6; --g-dynamic: #0b7f84; --g-holes: #6747c7;
-  --gd-standard: #78a8ff; --gd-dynamic: #3fd0c9; --gd-holes: #ab95ff;
+  --g-standard: #1f5fd6; --g-dynamic: #0b7f84; --g-holes: #6747c7; --g-surface: #a3470e;
+  --gd-standard: #78a8ff; --gd-dynamic: #3fd0c9; --gd-holes: #ab95ff; --gd-surface: #f39a5e;
   --g: var(--feed); --gd: var(--gd-standard);
   --grid: rgba(31, 95, 214, 0.07); --grid-fine: rgba(31, 95, 214, 0.035);
   --m-bg: #16232e; --m-edge: #0c141a; --m-screen: #0b1319; --m-line: #2a3b48;
@@ -573,19 +574,20 @@ input[type='range'] { height: 28px; }
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --g-standard: #6f9ff6; --g-dynamic: #3cc0bb; --g-holes: #a08bf5;
+    --g-standard: #6f9ff6; --g-dynamic: #3cc0bb; --g-holes: #a08bf5; --g-surface: #ee9a62;
     --grid: rgba(120, 160, 220, 0.06); --grid-fine: rgba(120, 160, 220, 0.03);
     --m-bg: #0f181f; --m-edge: #2c3a45; --m-screen: #080e13; --m-line: #26343f;
   }
 }
 :root[data-theme='dark'] {
-  --g-standard: #6f9ff6; --g-dynamic: #3cc0bb; --g-holes: #a08bf5;
+  --g-standard: #6f9ff6; --g-dynamic: #3cc0bb; --g-holes: #a08bf5; --g-surface: #ee9a62;
   --grid: rgba(120, 160, 220, 0.06); --grid-fine: rgba(120, 160, 220, 0.03);
   --m-bg: #0f181f; --m-edge: #2c3a45; --m-screen: #080e13; --m-line: #26343f;
 }
 [data-group='standard'] { --g: var(--g-standard); --gd: var(--gd-standard); }
 [data-group='dynamic'] { --g: var(--g-dynamic); --gd: var(--gd-dynamic); }
 [data-group='holes'] { --g: var(--g-holes); --gd: var(--gd-holes); }
+[data-group='surface'] { --g: var(--g-surface); --gd: var(--gd-surface); }
 
 /* drafting grid on the page */
 body {
@@ -838,6 +840,7 @@ body {
 .machine .op-chip[data-group='standard'] { --gd: var(--gd-standard); }
 .machine .op-chip[data-group='dynamic'] { --gd: var(--gd-dynamic); }
 .machine .op-chip[data-group='holes'] { --gd: var(--gd-holes); }
+.machine .op-chip[data-group='surface'] { --gd: var(--gd-surface); }
 a.op-chip:hover { text-decoration: underline; }
 
 /* drawing */

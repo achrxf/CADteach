@@ -10,6 +10,7 @@ import { addCadSpecs } from './specs-cad.js';
 import { addExtraSpecs } from './specs-extra.js';
 import { addParamSpecs2 } from './specs-params2.js';
 import { addCadSpecs2 } from './specs-cad2.js';
+import { addWireSpecs } from './specs-wire.js';
 
 const W = 420;
 const H = 250;
@@ -854,6 +855,7 @@ addCadSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead });
 addExtraSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
 addParamSpecs2(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
 addCadSpecs2(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
+addWireSpecs(specs, { W, H, ln, pl, ci, rc, tx, pa, arrowHead, hatch });
 
 const vizTitles0 = Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, v.title]));
 export const vizTitles = new Proxy(vizTitles0, { get: (o, k) => o[String(k).split('?')[0]] });

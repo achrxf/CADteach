@@ -14,7 +14,7 @@ import * as cad from './views/cad.js';
 import * as versionsView from './views/versions.js';
 import { cadTabs } from './data/cad.js';
 
-export const APP_VERSION = '1.7.0';
+export const APP_VERSION = '1.8.0';
 
 // ---------- theme ----------
 const applyTheme = (th) => {

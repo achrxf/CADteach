@@ -2,6 +2,15 @@
 
 Versions follow `MAJOR.MINOR.PATCH`: a new product area or app platform is a major version, new toolpaths or tools are minor, fixes and content corrections are patches.
 
+## 1.8.0 — 2026-11-24
+
+3D shapes from the 2D tab: the toolpaths under Toolpaths → 2D that cut in 3D.
+
+- 7 new toolpaths in a new family, "3D shapes from the 2D tab": Model Chamfer, and the wireframe toolpaths Swept 2D, Swept 3D, Revolved, Lofted, Ruled and Coons. Each has its summary, when to use it and when not, how to chain it, its parameters with mistakes, and an animated 3D preview you can rotate (ball and chamfer tools are drawn with their real shape)
+- 19 new interactive visuals: ball stepover and scallop height (worked out live), cut tolerance and program size, zigzag vs one way, along vs across, compensation to the surface, ball / bull nose / flat on a curved shape (drop-cutter simulation showing the material left), Swept 2D profiles, Swept 3D guides, Revolved axis / sweep / direction, Lofted and Ruled start points, Ruled cutting methods, Coons patches, and for Model Chamfer: edge picked, width vs tool, tip offset next to a floor, holder next to a wall
+- Field names on these pages come from shop use, not from screenshots: the uncertain ones say "(name to check)"
+- Versions: Model Chamfer is marked as new in 2019 (to check), and the 2026 note that the wireframe toolpaths also come to Mill-Turn
+
 ## 1.7.0 — 2026-11-02
 
 Mastercam 2018 to 2026, and an interactive drawing for everything.

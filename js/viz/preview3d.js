@@ -248,8 +248,168 @@ const scenes = {
     b.rapid(cx, cy, STOCK.z - 2).rapid(cx, cy, SAFE);
     return { toolR: R, toolH: 40, thread: true, path: b.pts, part: (T) => blockWith(T, (s) => s.holes.push(circleHole(T, cx, cy, hr)), STOCK.z - 0.01) };
   },
+  'model-chamfer'() {
+    // Boss with a 2 mm chamfer on its top edge; 90° chamfer mill, tip 0.4 mm below the chamfer.
+    const w = 64, h = 44, rc = 8, ch = 2, tip = 0.4, top = STOCK.z, zb = 15;
+    const z = top - ch - tip, o = tip; // 45° cone: the axis sits `tip` outside the outline
+    const b = builder();
+    const sx = cx, sy = cy - h / 2 - o;
+    b.rapid(sx, sy - 12, SAFE).rapid(sx, sy - 12, z + 3).feed(sx, sy - 12, z).feed(sx, sy, z);
+    b.feedPts(rrPoints(cx, cy, w + 2 * o, h + 2 * o, rc + o, z, false));
+    b.feed(sx, sy - 12, z).rapid(sx, sy - 12, SAFE);
+    return {
+      toolR: 4, toolH: 30, tool: 'chamfer', path: b.pts,
+      part: (T) => {
+        const g = new T.Group();
+        g.add(mesh(T, box(T, STOCK.x, STOCK.y, zb)));
+        const shp = roundedRect(new T.Shape(), cx, cy, w, h, rc);
+        const geo = new T.ExtrudeGeometry(shp, { depth: top - zb - ch, bevelEnabled: true, bevelThickness: ch, bevelSize: ch, bevelOffset: -ch, bevelSegments: 1, curveSegments: 24 });
+        geo.translate(0, 0, zb);
+        g.add(mesh(T, geo));
+        return g;
+      },
+    };
+  },
+  'swept-2d'() {
+    // Swept 2D: an R8 round swept along a rounded rectangle; Ø8 ball, one loop per step on the profile.
+    const w = 64, h = 44, rc = 10, r = 8, R = 4, top = STOCK.z, zb = 10;
+    const b = builder();
+    const n = 9;
+    b.rapid(cx, cy - h / 2 + r - 12, SAFE);
+    for (let i = 0; i <= n; i++) {
+      const th = (i / n) * (Math.PI / 2);
+      const o = -r + (r + R) * Math.sin(th), zc = top - r + (r + R) * Math.cos(th), z = zc - R;
+      if (i === 0) b.rapid(cx, cy - h / 2 - o, z + 3);
+      b.feed(cx, cy - h / 2 - o, z).feedPts(rrPoints(cx, cy, w + 2 * o, h + 2 * o, Math.max(0.5, rc + o), z, false));
+    }
+    b.rapid(cx, cy - h / 2 - R, SAFE);
+    return {
+      toolR: R, toolH: 30, tool: 'ball', feed: 90, path: b.pts,
+      part: (T) => {
+        const g = new T.Group();
+        g.add(mesh(T, box(T, STOCK.x, STOCK.y, zb)));
+        const geo = new T.ExtrudeGeometry(roundedRect(new T.Shape(), cx, cy, w, h, rc), { depth: top - zb - r, bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelOffset: -r, bevelSegments: 10, curveSegments: 24 });
+        geo.translate(0, 0, zb);
+        g.add(mesh(T, geo));
+        return g;
+      },
+    };
+  },
+  'swept-3d'() {
+    // A round-bottom groove (R9) that wanders in Y and climbs 7 mm along X; Ø8 ball along it.
+    const rg = 9, R = 4;
+    const yc = (x) => cy + 10 * Math.sin((x / STOCK.x) * Math.PI * 1.5);
+    const dy = (x) => (yc(x + 0.01) - yc(x - 0.01)) / 0.02;
+    const zb = (x) => 10 + 7 * (x / STOCK.x);
+    const hf = (x, y) => {
+      const n = 1 / Math.hypot(1, dy(x)), d = Math.abs(y - yc(x)) * n;
+      return d < rg ? Math.min(STOCK.z, zb(x) + rg - Math.sqrt(rg * rg - d * d)) : STOCK.z;
+    };
+    const b = builder();
+    const phis = [-60, -40, -20, 0, 20, 40, 60];
+    phis.forEach((p, k) => {
+      const ph = (p * Math.PI) / 180, pts = [];
+      for (let x = 0; x <= STOCK.x; x += 2) {
+        const n = 1 / Math.hypot(1, dy(x)), nx = -dy(x) * n, ny = n;
+        const lat = (rg - R) * Math.sin(ph), zc = zb(x) + rg - (rg - R) * Math.cos(ph);
+        pts.push([x + nx * lat, yc(x) + ny * lat, zc - R]);
+      }
+      if (k % 2) pts.reverse();
+      if (k === 0) b.rapid(pts[0][0], pts[0][1], SAFE).rapid(pts[0][0], pts[0][1], STOCK.z + 2);
+      b.feedPts(pts);
+    });
+    const last = b.pts[b.pts.length - 1];
+    b.rapid(last[0], last[1], SAFE);
+    return { toolR: R, toolH: 30, tool: 'ball', feed: 80, path: b.pts, part: (T) => mesh(T, heightField(T, hf)) };
+  },
+  revolved() {
+    // Barrel shape revolved around an axis along X (axis at Z 6); Ø10 ball arcs over the top.
+    const R = 5, az = 6;
+    const rad = (x) => 18 - 6 * ((x - cx) / 50) ** 2;
+    const hf = (x, y) => { const r = rad(x), d = Math.abs(y - cy); return d < r ? az + Math.sqrt(r * r - d * d) : az; };
+    const b = builder();
+    const xs = []; for (let x = 4; x <= STOCK.x - 4; x += 4) xs.push(x);
+    xs.forEach((x, k) => {
+      const pts = [];
+      for (let a = 15; a <= 165; a += 6) {
+        const ph = (a * Math.PI) / 180, rr = rad(x) + R;
+        pts.push([x, cy + rr * Math.cos(ph), az + rr * Math.sin(ph) - R]);
+      }
+      if (k % 2) pts.reverse();
+      if (k === 0) b.rapid(pts[0][0], pts[0][1], SAFE).rapid(pts[0][0], pts[0][1], pts[0][2] + 3);
+      b.feedPts(pts);
+    });
+    const last = b.pts[b.pts.length - 1];
+    b.rapid(last[0], last[1], SAFE);
+    return { toolR: R, toolH: 30, tool: 'ball', feed: 80, path: b.pts, part: (T) => mesh(T, heightField(T, hf)) };
+  },
+  lofted() {
+    const hf = (x, y) => { const u = x / STOCK.x, v = y / STOCK.y; return 9 + (10 + 4 * Math.sin(u * Math.PI * 2)) * Math.sin(v * Math.PI) * (0.6 + 0.4 * Math.sin(u * Math.PI)); };
+    return hfRaster(hf, 5, 'x', 6);
+  },
+  ruled() {
+    const z0 = (x) => 8 + 5 * (x / STOCK.x), z1 = (x) => 23 - 9 * Math.sin((x / STOCK.x) * Math.PI);
+    const hf = (x, y) => z0(x) + (z1(x) - z0(x)) * (y / STOCK.y);
+    return hfRaster(hf, 5, 'y', 5);
+  },
+  coons() {
+    const hf = (x, y) => { const u = x / STOCK.x, v = y / STOCK.y; return 11 + 7 * Math.sin(u * Math.PI) * Math.cos((v - 0.5) * 2.2) + 6 * u * v; };
+    return hfRaster(hf, 5, 'x', 5);
+  },
 };
 scenes.peel = scenes.slot;
+
+// A shape given as z = hf(x, y) over the stock footprint: top grid, four side walls and a bottom.
+function heightField(T, hf, nx = 100, ny = 70) {
+  const pos = [], idx = [];
+  const v = (x, y, z) => (pos.push(x, y, z), pos.length / 3 - 1);
+  const grid = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const x = (i / nx) * STOCK.x, y = (j / ny) * STOCK.y; grid.push(v(x, y, hf(x, y))); }
+  const g = (i, j) => grid[j * (nx + 1) + i];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) idx.push(g(i, j), g(i + 1, j), g(i + 1, j + 1), g(i, j), g(i + 1, j + 1), g(i, j + 1));
+  const wall = (pts, flip) => {
+    for (let k = 0; k < pts.length - 1; k++) {
+      const [x0, y0] = pts[k], [x1, y1] = pts[k + 1];
+      const a = v(x0, y0, 0), b = v(x1, y1, 0), c = v(x1, y1, hf(x1, y1)), d = v(x0, y0, hf(x0, y0));
+      if (flip) idx.push(a, c, b, a, d, c); else idx.push(a, b, c, a, c, d);
+    }
+  };
+  const line = (n, f) => { const r = []; for (let k = 0; k <= n; k++) r.push(f(k / n)); return r; };
+  wall(line(nx, (t) => [t * STOCK.x, 0]), false);
+  wall(line(nx, (t) => [t * STOCK.x, STOCK.y]), true);
+  wall(line(ny, (t) => [0, t * STOCK.y]), true);
+  wall(line(ny, (t) => [STOCK.x, t * STOCK.y]), false);
+  const b0 = v(0, 0, 0), b1 = v(STOCK.x, 0, 0), b2 = v(STOCK.x, STOCK.y, 0), b3 = v(0, STOCK.y, 0);
+  idx.push(b0, b2, b1, b0, b3, b2);
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+// Ball tip on a height field: centre offset along the normal by R, tip R below the centre.
+function hfTip(hf, x, y, R) {
+  const e = 0.05, zx = (hf(x + e, y) - hf(x - e, y)) / (2 * e), zy = (hf(x, y + e) - hf(x, y - e)) / (2 * e);
+  const n = 1 / Math.hypot(zx, zy, 1);
+  return [x - zx * n * R, y - zy * n * R, hf(x, y) + n * R - R];
+}
+// Zigzag raster with a ball over a height-field shape, passes along X or Y.
+function hfRaster(hf, R, dir, step) {
+  const b = builder();
+  const lines = [];
+  const A = dir === 'x' ? STOCK.y : STOCK.x, Bl = dir === 'x' ? STOCK.x : STOCK.y;
+  for (let a = 3, k = 0; a <= A - 3; a += step, k++) {
+    const pts = [];
+    for (let t = 0; t <= Bl; t += 2) pts.push(dir === 'x' ? hfTip(hf, t, a, R) : hfTip(hf, a, t, R));
+    if (k % 2) pts.reverse();
+    lines.push(pts);
+  }
+  b.rapid(lines[0][0][0], lines[0][0][1], SAFE).rapid(lines[0][0][0], lines[0][0][1], lines[0][0][2] + 3);
+  lines.forEach((l) => b.feedPts(l));
+  const last = b.pts[b.pts.length - 1];
+  b.rapid(last[0], last[1], SAFE);
+  return { toolR: R, toolH: 30, tool: 'ball', path: b.pts, feed: 90, part: (T) => mesh(T, heightField(T, hf)) };
+}
 
 function box(T, x, y, z) {
   const g = new T.BoxGeometry(x, y, z);
@@ -352,10 +512,16 @@ export async function mountPreview(el, kind, { autoRotate = true, onTick = null 
   scene.add(trail);
 
   // tool
-  const tg = new T.CylinderGeometry(sc.toolR, sc.toolR, sc.toolH, 32);
-  tg.rotateX(Math.PI / 2);
-  tg.translate(0, 0, sc.toolH / 2);
-  const tool = new T.Mesh(tg, mats.tool);
+  // The tool's origin is its tip, so path points are tip positions.
+  const tool = new T.Group();
+  const cyl = (r, h, z0) => { const g = new T.CylinderGeometry(r, r, h, 32); g.rotateX(Math.PI / 2); g.translate(0, 0, z0 + h / 2); return new T.Mesh(g, mats.tool); };
+  if (sc.tool === 'ball') {
+    const sg = new T.SphereGeometry(sc.toolR, 32, 16); sg.translate(0, 0, sc.toolR);
+    tool.add(new T.Mesh(sg, mats.tool), cyl(sc.toolR, sc.toolH - sc.toolR, sc.toolR));
+  } else if (sc.tool === 'chamfer') {
+    const cg = new T.ConeGeometry(sc.toolR, sc.toolR, 32); cg.rotateX(-Math.PI / 2); cg.translate(0, 0, sc.toolR / 2);
+    tool.add(new T.Mesh(cg, mats.tool), cyl(sc.toolR, sc.toolH - sc.toolR, sc.toolR));
+  } else tool.add(cyl(sc.toolR, sc.toolH, 0));
   scene.add(tool);
 
   // timing along path (rapids 4× faster)
@@ -363,7 +529,7 @@ export async function mountPreview(el, kind, { autoRotate = true, onTick = null 
   let total = 0, feedIdx = 0;
   for (let i = 1; i < P.length; i++) {
     const len = Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1], P[i][2] - P[i - 1][2]);
-    const dur = Math.max(len / (P[i][3] ? 160 : 40), 1e-4);
+    const dur = Math.max(len / (P[i][3] ? 160 : sc.feed || 40), 1e-4);
     seg.push({ a: P[i - 1], b: P[i], dur, start: total, done: feedIdx });
     if (!P[i][3]) feedIdx++;
     total += dur;

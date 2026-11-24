@@ -97,7 +97,7 @@ function list() {
       <h1 class="page-title">Practice parts</h1>
       <p class="lede">Real little jobs to program in your own Mastercam. Download the drawing as a DXF, set up the stock and the vise like in the 3D preview, and try to beat the target cycle time.</p>
       <h2 class="section-title">Complete 2D jobs</h2>
-      <p class="muted">Whole parts, from a first plate to expert jobs with thin ribs, stepped islands and clamps in the way. Only the 12 2D toolpaths are needed.</p>
+      <p class="muted">Whole parts, from a first plate to expert jobs with thin ribs, stepped islands and clamps in the way. Only the 12 standard 2D toolpaths are needed.</p>
       ${['beginner', 'intermediate', 'advanced', 'expert'].map((lv) => { const js = jobs.filter((p) => p.level === lv); return js.length ? html`<h3 class="part-group"><span class="level level-${lv}">${levels[lv]}</span><span class="muted" style="font:400 var(--t-sm) var(--f-body)">${js.length} part${js.length > 1 ? 's' : ''}</span></h3><div class="part-grid big">${js.map((p) => card(p, true))}</div>` : ''; })}
       <h2 class="section-title">One toolpath at a time</h2>
       <p class="muted">A small part for each toolpath, so you can try its settings on their own.</p>

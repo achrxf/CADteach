@@ -12,7 +12,7 @@ Mastercam explained parameter by parameter — for programmers and machinists.
 
 ## What was in v1.0
 
-- **12 toolpaths:** Facing, Contour, Pocket, Slot Mill, Dynamic Mill, Dynamic Contour, Area Mill, Peel Mill, Drill, Circle Mill, Helix Bore, Thread Mill
+- **19 toolpaths:** Facing, Contour, Pocket, Slot Mill, Dynamic Mill, Dynamic Contour, Area Mill, Peel Mill, Drill, Circle Mill, Helix Bore, Thread Mill, and the 3D shapes from the 2D tab: Model Chamfer, Swept 2D, Swept 3D, Revolved, Lofted, Ruled, Coons
 - **33 interactive visuals**, shown next to each parameter, plus real Mastercam 2025 dialog screenshots (`img/mc2025/`). The first 19: compensation side and type, stock to leave, depth cuts, the five linking heights (animated), lead in/out, multi passes, tabs, stepover, engagement and chip thinning, roll around corners, facing overlaps, drill cycles, helix entry, thread milling direction, drill tip comp, chamfer tip offset, ramping, break through
 - **3D previews** of each toolpath (three.js) — drag to rotate
 - **Fix a problem:** 16 shop-floor symptoms traced to the parameters that cause them

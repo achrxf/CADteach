@@ -16,6 +16,13 @@ export const opIcons = {
   'circle-mill': s('<circle cx="12" cy="12" r="8" opacity=".35"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="3"/><path d="M12 12h3"/>'),
   'helix-bore': s('<path d="M6 4h12M6 20h12" opacity=".35"/><path d="M6 6c0 1.5 12 1.5 12 3S6 10.5 6 12s12 1.5 12 3-12 1.5-12 3"/>'),
   'thread-mill': s('<path d="M8 3v18M16 3v18" opacity=".35"/><path d="M8 5l8 2-8 2 8 2-8 2 8 2-8 2 8 2"/>'),
+  'model-chamfer': s('<path d="M4 20V9l5-5h11v16z" opacity=".35"/><path d="M4 9l5-5"/><path d="M6 11l7-7" opacity=".6"/>'),
+  'swept-2d': s('<rect x="3" y="5" width="18" height="14" rx="4" opacity=".35"/><rect x="5" y="7" width="14" height="10" rx="3"/><rect x="7.5" y="9.5" width="9" height="5" rx="2" opacity=".6"/>'),
+  'swept-3d': s('<path d="M3 18c4-1 6-8 9-8s5 5 9 4" opacity=".35"/><path d="M3 15c4-1 6-8 9-8s5 5 9 4M3 21c4-1 6-8 9-8s5 5 9 4"/>'),
+  revolved: s('<path d="M3 17h18" opacity=".5" stroke-dasharray="2 2"/><path d="M4 17a8 8 0 0 1 16 0"/><path d="M8 17a4 4 0 0 1 8 0" opacity=".6"/><path d="M12 9v8" opacity=".6"/>'),
+  lofted: s('<path d="M4 19c0-6 2-12 4-12s2 12 4 12 2-9 4-9 4 9 4 9" opacity=".35"/><path d="M5 19c1-4 2-6 3-6M11 19c1-6 2-9 3-9M17 19c1-3 2-5 3-5"/>'),
+  ruled: s('<path d="M3 19h18M7 5h10" /><path d="M4 19l4-14M8 19l2.7-14M12 19V5M16 19l-2.7-14M20 19L16 5" opacity=".6"/>'),
+  coons: s('<path d="M3 17c4-3 14-3 18 0M4 7c4-2 12-2 16 0" /><path d="M3 17L4 7M21 17l-1-10M12 15.5L12 5.5" /><path d="M3.5 12c4-2 13-2 17 0" opacity=".5"/>'),
 };
 
 export const ui = {
